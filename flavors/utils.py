@@ -4,10 +4,19 @@ import os
 import torch
 import torch.nn as nn
 import scipy.io as spio
+import random
 
 
-def acc_score(targets, prediction):
-    acc = accuracy_score(targets, np.int64((prediction.reshape((1, -1)) > 0.5).reshape(-1, 1)))
+def acc_score(targets, prediction, params):
+    if params.classification_flag and params.output_dim == 1:
+        acc = accuracy_score(targets, np.int64((prediction.reshape((1, -1)) > 0.5).reshape(-1, 1)))
+    elif params.classification_flag and params.output_dim > 2:
+        _, predicted_labels = torch.max(prediction, 1)
+        correct_predictions = (predicted_labels == targets.flatten()).sum().item()
+        total_predictions = targets.size(0)
+        acc = correct_predictions / total_predictions
+    else:
+        raise ValueError("Not supported in this code version")
     return acc
 
 
@@ -16,8 +25,13 @@ def get_subdirectories(directory):
     return subdirectories
 
 
-def init_criterion():
-    criterion = nn.BCELoss()
+def init_criterion(param):
+    if param.output_dim == 1:
+        criterion = nn.BCELoss()
+    elif param.output_dim > 2:
+        criterion = criterion = nn.CrossEntropyLoss()
+    else:
+        raise ValueError("Init criterion problem")
     return criterion
 
 
@@ -97,3 +111,11 @@ def find_best_hyper_comb(root_directory, key):
         print("No valid subfolders found.")
 
     return best_folder
+
+def set_seed(seed):
+    """Set the random seed for reproducibility."""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)

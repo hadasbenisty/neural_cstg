@@ -11,12 +11,13 @@ import models
 import time
 from sklearn.linear_model import LogisticRegression
 from post_processing import post_process_flow
-from flavors.utils import acc_score
+from flavors.utils import acc_score, set_seed
 
 
-def main_workflow():
+def main_workflow(date):
     # Parameters
     params = Params()
+    params.date = date
     params = data_origanization_params(params)
 
     # Write running parameters to a text file
@@ -28,6 +29,7 @@ def main_workflow():
     # params.chance_level and data.use_flag are calculated in DataProcessor
     # cross validation k fold split is done in DataProcessor
     data = DataProcessor(params)
+    params = data.params
     if not data.use_flag:  # the data not suitable
         return
 
@@ -36,7 +38,11 @@ def main_workflow():
     # input_dim = no. of contextual features
     params.param_dim = 1
     #
-    params.output_dim = 1
+    num_labels = len(np.unique(np.array(data.output_label)))
+    if num_labels == 2:
+        params.output_dim = 1
+    else:
+        params.output_dim = num_labels
 
     if params.include_linear_model:
         for c_value in params.inverse_regularization:
@@ -80,6 +86,9 @@ def main_workflow():
                         filename = os.path.join(params.res_directory, hyperparameter_combination,
                                                 "selfold" + str(fold) + ".mat")
 
+                        # uneffective_flag = True
+                        # while uneffective_flag:
+                            #set_seed(int(time.time()))
                         # Data
                         Container = DataContainer(params, data, fold)
                         train_Dataloader, dev_Dataloader, test_Dataloader = Container.get_Dataloaders(params)
@@ -88,13 +97,14 @@ def main_workflow():
                         model = models.__dict__[params.ML_model_name] \
                             (params.input_dim, hidden_dim, params.output_dim, params.param_dim, hyper_hidden_dim,
                              params.dropout, sigma=params.sigma, include_B_in_input=params.include_B_in_input,
-                             non_param_stg=params.non_param_stg, train_sigma=params.train_sigma)
+                             non_param_stg=params.non_param_stg, train_sigma=params.train_sigma,
+                             classification=params.classification_flag)
 
                         model = model.to(params.device).float()
-                        criterion = init_criterion()
+                        criterion = init_criterion(params)
                         optimizer = init_optimizer(model, learning_rate)
 
-                        train_acc_array, train_loss_array, dev_acc_array, dev_loss_array = \
+                        train_acc_array, train_loss_array, dev_acc_array, dev_loss_array, uneffective_flag = \
                             train(params, model, train_Dataloader, dev_Dataloader, criterion, optimizer,
                                   stg_regularizer)
 
@@ -102,11 +112,15 @@ def main_workflow():
                         acc_dev_folds.append(dev_acc_array[-1])
 
                         unique_r = np.unique(Container.rte)
-                        alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+                        #alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+                        mu_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+                        stochastic_gate_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
                         acc_vals_per_r = np.zeros(len(unique_r))
                         ri = 0
                         for rval in np.unique(Container.rte):
-                            alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
+                            #alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
+                            mu_vals[:, ri], stochastic_gate_vals[:, ri] =\
+                                get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
                             inds = [i for i, x in enumerate(Container.rte == rval) if x]
                             x_test_tmp = Container.xte[inds, :]
                             r_test_tmp = Container.rte[inds].reshape(-1, 1)
@@ -117,7 +131,7 @@ def main_workflow():
                             test_dataloader_tmp = torch.utils.data.DataLoader(test_set_tmp,
                                                                               batch_size=params.batch_size,
                                                                               shuffle=False)
-                            acc_dev, _ = test_process(params, model, test_dataloader_tmp, criterion, stg_regularizer)
+                            acc_dev, _, _, _ = test_process(params, model, test_dataloader_tmp, criterion, stg_regularizer)
                             acc_vals_per_r[ri] = acc_dev
                             ri += 1
 
@@ -125,7 +139,8 @@ def main_workflow():
                                      {'nn_acc_train': train_acc_array[-1], 'nn_acc_dev': dev_acc_array[-1],
                                       'train_acc_array': train_acc_array, 'dev_acc_array': dev_acc_array,
                                       'train_loss_array': train_loss_array, 'dev_loss_array': dev_loss_array,
-                                      'unique_r': unique_r, 'alpha_vals': alpha_vals, 'acc_vals_per_r': acc_vals_per_r})
+                                      'unique_r': unique_r, 'mu_vals': mu_vals,
+                                      'stochastic_gate_vals': stochastic_gate_vals, 'acc_vals_per_r': acc_vals_per_r})
 
                         end_time = time.time()  # Record end time
                         elapsed_time = end_time - start_time
@@ -146,9 +161,14 @@ def main_workflow():
 
     print("----Start post-processing---")
     name = params.res_directory.split("\\")[-1]
-    post_process_flow(name)
+    post_process_flow(name, date=params.date)
     print("----FINISH----")
 
 
 if __name__ == '__main__':
-    main_workflow()
+    from flavors.utils import get_subdirectories
+    dates = get_subdirectories('../data/4575')
+    dates = ['03_14_19', '03_19_19', '03_31_19', '04_11_19', '04_15_19']
+    for date in dates:
+        print(f"WORKING ON DATE:{date}")
+        main_workflow(date)

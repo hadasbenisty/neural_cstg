@@ -10,7 +10,7 @@ class Cstg_params(object):
         self.hyper_hidden_dims = [[10], [50], [100], [1000]]  # units for the gates
         self.hidden_dims = [[500, 300, 100, 50, 10, 2]]
         self.learning_rates = [0.0005, 0.001, 0.05]
-        self.stg_regularizers = [0.05]  # this is lambda 0.0001,0.0005, 0.001
+        self.stg_regularizers = [0.05]  # 0.005, 0.0005  # this is lambda
         self.dropout = 0
         self.train_sigma = False
         self.sigma = 0.5
@@ -18,11 +18,12 @@ class Cstg_params(object):
         ######################
         # Running Parameters #
         ######################
+        self.classification_flag = True  # relevant for model init
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.ML_model_name = "fc_stg_layered_param_modular_model_sigmoid"
         self.include_linear_model = False
         self.post_process_mode = False  # after findig hyper-parameters
-        self.num_epoch = 1
+        self.num_epoch = 50  #Todo
         self.batch_size = 32
         # 3. parametric stg
         self.stg, self.include_B_in_input, self.non_param_stg = (True, False, False)

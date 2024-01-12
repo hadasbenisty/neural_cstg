@@ -13,13 +13,20 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
     acc_dev_array = [0]
     loss_dev_array = [0]
 
+    # to ensure effective learning
+    same_acc_count = 0
+    uneffective_learn = False
+
     for epoch in range(params.num_epoch):
         print(epoch)
         model.train()
         for batch, (input, target, B) in enumerate(train_dataloader):
 
             input = input.to(params.device).float()
-            target = target.to(params.device).float()
+            if params.output_dim > 2 and params.classification_flag:  # for cross entropy pytorch format
+                target = target.to(params.device).long()
+            else:
+                target = target.to(params.device).float()
             B = B.to(params.device).float()
 
             output = model(input, B)
@@ -38,12 +45,19 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
 
         model.eval()
 
-        acc_train, loss_train = test_process(params, model, train_dataloader, criterion, stg_regularizer)
+        acc_train, loss_train, _, _ = test_process(params, model, train_dataloader, criterion, stg_regularizer)
+        # if acc_train == acc_train_array[-1]/100:
+        #     same_acc_count += 1
+        #     if same_acc_count == 20:
+        #         uneffective_learn = True
+        #         return acc_train_array, loss_train_array, acc_dev_array, loss_dev_array, uneffective_learn
+        # else:
+        #     same_acc_count = 0
         acc_train_array.append(acc_train * 100)
         loss_train_array.append(loss_train)
         print(f"acc train :{acc_train_array[-1]}")
 
-        acc_dev, loss_dev = test_process(params, model, dev_dataloader, criterion, stg_regularizer)
+        acc_dev, loss_dev, _, _ = test_process(params, model, dev_dataloader, criterion, stg_regularizer)
         acc_dev_array.append(acc_dev * 100)
         loss_dev_array.append(loss_dev)
         print(f"acc dev :{acc_dev_array[-1]}")
@@ -58,7 +72,7 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
                 scipy.io.savemat(loss_path, {'train_loss_array': loss_train_array, 'dev_loss_array': loss_dev_array,
                                              'train_acc': acc_train_array, 'dev_acc': acc_dev_array})
 
-    return acc_train_array, loss_train_array, acc_dev_array, loss_dev_array
+    return acc_train_array, loss_train_array, acc_dev_array, loss_dev_array, uneffective_learn
 
 
 def test_process(params, model, test_dataloader, criterion, stg_regularizer):
@@ -74,24 +88,50 @@ def test_process(params, model, test_dataloader, criterion, stg_regularizer):
 
         with torch.no_grad():
             output = model(input, B)
-        output = torch.squeeze(output)
-        y_pred_cur = output.float().detach().cpu().numpy().reshape(-1, 1)
-        if y_pred is None:
-            y_pred = y_pred_cur
-            all_targets = target
-        else:
-            y_pred = np.vstack((y_pred, y_pred_cur))
-            all_targets = np.vstack((all_targets, target))
 
-        target = target.to(params.device).float()
+        if params.output_dim > 2 and params.classification_flag:  # for cross entropy pytorch format
+            target = target.to(params.device).long()
+            y_pred_cur = output.float()
+            _, labels_pred_cur = torch.max(y_pred_cur, 1)
+
+            if y_pred is None:
+                y_pred = y_pred_cur
+                all_targets = target
+                labels_pred = labels_pred_cur
+            else:
+                y_pred = torch.concatenate((y_pred, y_pred_cur))
+                all_targets = torch.concatenate((all_targets, target))
+                labels_pred = torch.concatenate((labels_pred, labels_pred_cur))
+
+        else:
+            output = torch.squeeze(output)
+            y_pred_cur = output.float().detach().cpu().numpy().reshape(-1, 1)
+            labels_pred_cur = np.argmax(y_pred_cur, 1)[:, None]
+
+            if y_pred is None:
+                y_pred = y_pred_cur
+                all_targets = target
+                labels_pred = labels_pred_cur
+            else:
+                y_pred = np.vstack((y_pred, y_pred_cur))
+                all_targets = np.vstack((all_targets, target))
+                labels_pred = np.vstack((labels_pred, labels_pred_cur))
+
+            target = target.to(params.device).float()
+
         loss = criterion(output, torch.squeeze(target))
         loss += stg_regularizer * torch.mean(model.reg(model.gates.mu/model.sigma))
         train_loss += loss.item() * len(input)
         train_count += len(input)
 
-    acc = acc_score(all_targets, y_pred)
+    if params.output_dim == 1:
+        labels_pred = torch.tensor(labels_pred.flatten())
+
+    acc = acc_score(all_targets, y_pred, params)
     loss = train_loss / train_count
-    return acc, loss
+
+
+    return acc, loss, all_targets, labels_pred
 
 
 def get_prob_alpha(params, model, r):
@@ -101,7 +141,10 @@ def get_prob_alpha(params, model, r):
     B = B.to(params.device).float()
 
     model.eval()
-    mu = model.gates.get_feature_importance(B)
+    # mu = model.gates.get_feature_importance(B)
+    # mu = mu.detach().cpu().numpy()
+    mu, stochastic_gate = model.gates.get_feature_importance(B)
     mu = mu.detach().cpu().numpy()
+    stochastic_gate = stochastic_gate.detach().cpu().numpy()
 
-    return mu
+    return mu, stochastic_gate

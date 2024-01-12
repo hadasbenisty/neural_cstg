@@ -14,8 +14,11 @@ class DateProcessor:
 
         self.data = spio.loadmat(matfile_path)
         self.date_info = date_info  # Store additional information about the date
-        if date_info.iloc[0]['codition'] == 'control' and date_info.iloc[0]['to_include'] == 2 \
-                and date_info.iloc[0]['type1'] == 'ongoing':
+        self.raw_data = []
+        self.date_flavors = date_info.iloc[0]['flavors'].split('_')
+        self.flavors2num = params.flavors2num
+        if date_info.iloc[0]['codition'] == 'control' and date_info.iloc[0]['to_include'] == 2:
+                #and date_info.iloc[0]['type1'] == 'ongoing':
             self.use_flag = True
         else:
             self.use_flag = False
@@ -30,23 +33,60 @@ class DateProcessor:
         self.start_time = params.start_time  # -4 sec
         self.end_time = params.end_time   # 8 sec
         self.drop_time = params.drop_time  # drop the first sec
+        self.total_time = params.total_time  # -1 for all the data duration, else number of sec
         self.sample_per_sec = params.sample_per_sec  # samples/sec
         self.window_size_avg = params.window_size_avg  # 1 sec
         self.overlap_avg = params.overlap_avg  # 0.5 sec
 
-    def get_output_labels(self, outcome_keys):
+    def get_output_labels(self, outcome_keys, eff_t_len):
+        if outcome_keys[0] == 'flavors':
+            success_array = self.data['BehaveData']['success'][0][0]['indicatorPerTrial'][0][0]
+            # 1 for success, 0 for failre
+            outcomes = []
+            allowed_flavors = []
+            for flavor in self.date_flavors:
+                if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                    flavor_array = self.data['BehaveData']['grain'][0][0]['indicatorPerTrial'][0][0]
+                elif flavor == 's':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                    flavor_array = self.data['BehaveData']['sucrose'][0][0]['indicatorPerTrial'][0][0]
+                elif flavor == 'q':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                    flavor_array = self.data['BehaveData']['quinine'][0][0]['indicatorPerTrial'][0][0]
+                elif flavor == 'f':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                    flavor_array = self.data['BehaveData']['fake'][0][0]['indicatorPerTrial'][0][0]
+                else:
+                    raise ValueError("There is no flavor like this")
+                num_flavor = self.flavors2num[flavor]
+                # take only the successful tries
+                flavor_array = num_flavor * np.array(flavor_array) * np.array(success_array)
+                outcomes.append(flavor_array)
+                allowed_flavors.append(num_flavor)
 
-        outcomes = []
-        for key in outcome_keys:
-            outcome_label = self.data['BehaveData'][key][0][0]['indicatorPerTrial'][0][0]
-            outcomes.append(outcome_label)
+            outcomes = np.stack(outcomes)
+            # Check for conflicts: more than one non-zero value at any position
+            if np.any(np.sum(outcomes != 0, axis=0) > 1):
+                raise ValueError("Conflict detected in flavors")
 
-        # Stack the arrays horizontally to create a 2D array
-        stacked_outcomes = np.column_stack(outcomes)
-        # Create a new array based on the 'And' condition, only trials that satisfy all keys are indicate with '1'
-        output_labels = np.all(stacked_outcomes, axis=1).astype(int)
+            # Use np.max to combine the arrays, since we know there are no conflicts
+            outcomes_par_trial = np.max(outcomes, axis=0)
 
-        return output_labels  # vector size number of trails
+            if not np.all(np.diff(np.sort(outcomes_par_trial)) == 1):
+                raise ValueError("Not suitable for torch cross entropy loss format")
+
+            output_labels = np.tile(outcomes_par_trial.flatten(), eff_t_len)[:, None]
+
+        else:
+            outcomes = []
+            for key in outcome_keys:
+                outcome_label = self.data['BehaveData'][key][0][0]['indicatorPerTrial'][0][0]
+                outcomes.append(outcome_label)
+
+            # Stack the arrays horizontally to create a 2D array
+            stacked_outcomes = np.column_stack(outcomes)
+            # Create a new array based on the 'And' condition, only trials that satisfy all keys are indicate with '1'
+            output_labels = np.all(stacked_outcomes, axis=1).astype(int)
+            output_labels = np.tile(output_labels, eff_t_len)[:, None]
+
+        return output_labels
 
     def get_explan_feat(self, relative_idx_neu, window_size, overlap, total_samples):
 
@@ -65,7 +105,49 @@ class DateProcessor:
 
         return explan_feat
 
-    def process_data(self, outcome_keys): #Todo: add more options for explan_feat types
+    def get_context_feat(self, context_key, eff_t_len):
+
+        if context_key == 'time':
+            return stats.zscore(self.time_win)  # (time_bin-mu(time_bin))/sigma(time_bin)
+
+        elif context_key == "flavors":
+            context = []
+            allowed_flavors = []
+            for flavor in self.date_flavors:
+                if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                    flavor_array = self.data['BehaveData']['grain'][0][0]['indicatorPerTrial'][0][0]
+                elif flavor == 's':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                    flavor_array = self.data['BehaveData']['sucrose'][0][0]['indicatorPerTrial'][0][0]
+                elif flavor == 'q':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                    flavor_array = self.data['BehaveData']['quinine'][0][0]['indicatorPerTrial'][0][0]
+                elif flavor == 'f':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                    flavor_array = self.data['BehaveData']['fake'][0][0]['indicatorPerTrial'][0][0]
+                else:
+                    raise ValueError("There is no flavor like this")
+                num_flavor = self.flavors2num[flavor]
+                flavor_array = num_flavor * np.array(flavor_array)
+                context.append(flavor_array)
+                allowed_flavors.append(num_flavor)
+
+            context = np.stack(context)
+            # Check for conflicts: more than one non-zero value at any position
+            if np.any(np.sum(context != 0, axis=0) > 1):
+                raise ValueError("Conflict detected in flavors")
+
+            # Use np.max to combine the arrays, since we know there are no conflicts
+            context_par_trial = np.max(context, axis=0)
+
+            if not np.all(np.isin(context_par_trial, np.array(allowed_flavors))):
+                raise ValueError("Problem with the flavors context")
+
+            context = np.tile(context_par_trial.flatten(), eff_t_len)[:, None]
+            return context
+
+        else:
+            raise ValueError("No suitable context key")
+
+
+    def process_data(self, outcome_keys, context_key): #Todo: add more options for explan_feat types
 
         # Verify all the neurons are the same for all the trials
         roiNames = self.data['imagingData']['roiNames'][0][0]
@@ -76,6 +158,7 @@ class DateProcessor:
         relative_idx_neu = np.array(np.where(np.isin(roiNames[:, 0], self.relevent_idx)))
         if self.data is None:
             raise ValueError("Data not loaded properly.")
+        self.raw_data = self.data['imagingData']['samples'][0][0][relative_idx_neu, :, :].squeeze()
 
         # Init parameters
         samples_num = self.data['imagingData']['samples'][0][0].shape[1]
@@ -87,21 +170,28 @@ class DateProcessor:
                 raise ValueError(" total number of samples number is not consistence")
         trial_num = self.data['imagingData']['samples'][0][0].shape[2]
 
-        self.explan_feat = self.get_explan_feat(relative_idx_neu, np.int(self.window_size_avg * self.sample_per_sec),
-                                                np.int(self.overlap_avg * self.sample_per_sec), samples_num)
+        if self.total_time != -1:
+            if self.total_time * self.sample_per_sec > samples_num:
+                raise ValueError(" total time is bigger than exists")
+            elif self.total_time < 0:
+                raise ValueError(" invalid total time")
+            else:
+                drop_time_end = self.end_time - (self.start_time + self.drop_time + self.total_time)
+                samples_num = samples_num - drop_time_end * self.sample_per_sec
+
+        self.explan_feat = self.get_explan_feat(relative_idx_neu, int(self.window_size_avg * self.sample_per_sec),
+                                                int(self.overlap_avg * self.sample_per_sec), samples_num)
 
         # Temp calculations
-        eff_t_len = np.int(self.explan_feat.shape[0]/trial_num)
+        eff_t_len = int(self.explan_feat.shape[0]/trial_num)
         t = np.linspace(self.start_time + self.drop_time, self.end_time, eff_t_len)
-        tmp_output_labels = self.get_output_labels(outcome_keys)
-        assert np.unique(tmp_output_labels).shape[0] == 2, "This version of the code does not support multiclass"
         trial_inds = np.arange(1, trial_num + 1)
-
         self.time_win = np.repeat(t, trial_num)[:, None]
-        self.context_feat = stats.zscore(self.time_win)  # (time_bin-mu(time_bin))/sigma(time_bin)
-        self.output_label = np.tile(tmp_output_labels, eff_t_len)[:, None]
         self.trials = np.tile(trial_inds, eff_t_len)[:, None]
 
+        self.output_label = self.get_output_labels(outcome_keys, eff_t_len)
+
+        self.context_feat = self.get_context_feat(context_key, eff_t_len)
 
 class AnimalDataProcessor:
     def __init__(self, params):
@@ -112,32 +202,35 @@ class AnimalDataProcessor:
         self.idx_neurons_all_dates = self.find_neurons_intersection()
 
         # Initialization of all Dates data processor. option to combine the data from a different dates.
-        # Todo: add combination
+        # Todo: add combination of dates
         matfile_path = os.path.join(os.path.join(self.mat_files_directory, params.date), 'data.mat')
-        data_tmp = DateProcessor(params, matfile_path, relevent_idx=self.idx_neurons_all_dates,
+        self.Date_data = DateProcessor(params, matfile_path, relevent_idx=self.idx_neurons_all_dates,
                                  date_info=self.animal_info_df[self.animal_info_df['folder'] == matfile_path.split('\\')[-2]])
-        data_tmp.process_data(outcome_keys=params.outcome_keys)
+        self.Date_data.process_data(outcome_keys=params.outcome_keys, context_key=params.context_key)
+        params.end_time = self.Date_data.end_time
         if not params.post_process_mode:
             with open(os.path.join(params.res_directory, 'log.txt'), 'a') as f:
                 # Add a chance level parameter to the log file
-                f.write("%s = %s\n" % ('end_time', data_tmp.end_time))
-        self.use_flag = data_tmp.use_flag
+                f.write("%s = %s\n" % ('end_time', self.Date_data.end_time))
+        self.use_flag = self.Date_data.use_flag
         if not self.use_flag:
             return
 
         # The combined data from all chosen dates
-        self.explan_feat = data_tmp.explan_feat  # after multiply by contextual gates will be input to the prediction model
-        self.context_feat = data_tmp.context_feat  # inputs to the hyper-network that creates mu vector
-        self.output_label = data_tmp.output_label  # labels
-        chance_level = self.output_label.sum()/self.output_label.shape[0]
-        chance_level = max(chance_level, 1-chance_level)  # Todo: error for multiclass
+        self.explan_feat = self.Date_data.explan_feat  # after multiply by contextual gates will be input to the prediction model
+        self.context_feat = self.Date_data.context_feat  # inputs to the hyper-network that creates mu vector
+        self.output_label = self.Date_data.output_label  # labels
+        # Chance level is proportion of the most frequent class
+        class_counts = np.bincount(self.output_label.flatten())  # Count the frequency of each class
+        most_frequent_class_count = np.max(class_counts)  # Find the most frequent class
+        chance_level = most_frequent_class_count / len(self.output_label)
         params.chance_level = chance_level
         if not params.post_process_mode:
             with open(os.path.join(params.res_directory, 'log.txt'), 'a') as f:
                 # Add a chance level parameter to the log file
                 f.write("%s = %s\n" % ('chance_level', chance_level))
         print(f"chance level is {chance_level}")
-        self.trials = data_tmp.trials
+        self.trials = self.Date_data.trials
         self.num_trials = self.trials[-1][0]
 
         self.foldsnum = params.folds_num
@@ -148,6 +241,8 @@ class AnimalDataProcessor:
             self.split_data_into_folds(num_trials=self.num_trials)
         else:  # post process, after the hyperparameters is chosen
             self.split_train_test(self.num_trials)
+
+        self.params = params
 
     def read_exel_info(self, info_excel_path, sheet_num):
         # Read data information from the Excel file
@@ -213,13 +308,26 @@ class AnimalDataProcessor:
             trials_inds[trials_labels == trial] = True
         return [i for i, x in enumerate(trials_inds) if x] # return all the indices of the element in trials_inds that are not zero
 
-    def save_processed_data(self, output_filename):  # Todo: change the save parameters
-        if self.X is None or self.outcome_label is None or self.time_win is None\
-                or self.trials is None or self.internal_param is None:
-            raise ValueError("Data not processed. Call process_data() first.")
 
-        spio.savemat(output_filename, {'X': self.X, 'outcome_label': self.outcome_label, 'time_win': self.time_win,
-                                       'trials': self.trials, 'internal_param': self.internal_param})
+    def get_neu_activity(self, neuron_index):
+
+        trial_times_activity = self.explan_feat[:, neuron_index]
+        num_trial = np.unique(self.trials).shape[0]
+        labels = self.output_label[:num_trial]
+        trials_vs_time = trial_times_activity.reshape(-1, num_trial).T
+
+        succ_labels = labels == 1
+        mean_activity_succ = trials_vs_time[succ_labels.flatten(), :].mean(axis=0)
+        stds_succ = trials_vs_time[succ_labels.flatten(), :].std(axis=0)/np.sqrt(num_trial-1)  # standard error of the mean, SEM
+
+        fail_labels = labels == 0
+        mean_activity_fail = trials_vs_time[fail_labels.flatten(), :].mean(axis=0)
+        stds_fail = trials_vs_time[fail_labels.flatten(), :].std(axis=0)/np.sqrt(num_trial-1)  # standard error of the mean, SEM
+
+        mean_activities = [mean_activity_succ, mean_activity_fail]
+        stds = [stds_succ, stds_fail]
+
+        return mean_activities, stds
 
 
 class DataProcessor(AnimalDataProcessor):
