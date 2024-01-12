@@ -114,13 +114,19 @@ def main_workflow(date):
                         unique_r = np.unique(Container.rte)
                         #alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
                         mu_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
-                        stochastic_gate_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+                        if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
+                            w_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+                        else:
+                            w_vals = []
                         acc_vals_per_r = np.zeros(len(unique_r))
                         ri = 0
                         for rval in np.unique(Container.rte):
                             #alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
-                            mu_vals[:, ri], stochastic_gate_vals[:, ri] =\
-                                get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
+                            if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
+                                mu_vals[:, ri], w_vals[:, ri] =\
+                                    get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
+                            elif params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid":
+                                mu_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
                             inds = [i for i, x in enumerate(Container.rte == rval) if x]
                             x_test_tmp = Container.xte[inds, :]
                             r_test_tmp = Container.rte[inds].reshape(-1, 1)
@@ -140,7 +146,7 @@ def main_workflow(date):
                                       'train_acc_array': train_acc_array, 'dev_acc_array': dev_acc_array,
                                       'train_loss_array': train_loss_array, 'dev_loss_array': dev_loss_array,
                                       'unique_r': unique_r, 'mu_vals': mu_vals,
-                                      'stochastic_gate_vals': stochastic_gate_vals, 'acc_vals_per_r': acc_vals_per_r})
+                                      'w_vals': w_vals, 'acc_vals_per_r': acc_vals_per_r})
 
                         end_time = time.time()  # Record end time
                         elapsed_time = end_time - start_time

@@ -20,7 +20,7 @@ class Cstg_params(object):
         ######################
         self.classification_flag = True  # relevant for model init
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.ML_model_name = "fc_stg_layered_param_modular_model_sigmoid"
+        self.ML_model_name =  "fc_stg_layered_param_modular_model_sigmoid_extension" #"fc_stg_layered_param_modular_model_sigmoid"
         self.include_linear_model = False
         self.post_process_mode = False  # after findig hyper-parameters
         self.num_epoch = 50  #Todo

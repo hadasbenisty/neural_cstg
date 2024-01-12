@@ -143,8 +143,14 @@ def get_prob_alpha(params, model, r):
     model.eval()
     # mu = model.gates.get_feature_importance(B)
     # mu = mu.detach().cpu().numpy()
-    mu, stochastic_gate = model.gates.get_feature_importance(B)
-    mu = mu.detach().cpu().numpy()
-    stochastic_gate = stochastic_gate.detach().cpu().numpy()
-
-    return mu, stochastic_gate
+    if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid":
+        mu = model.gates.get_feature_importance(B)
+        mu = mu.detach().cpu().numpy()
+        return mu
+    elif params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
+        mu, w = model.gates.get_feature_importance(B)
+        mu = mu.detach().cpu().numpy()
+        w = w.detach().cpu().numpy()
+        return mu, w
+    else:
+        RuntimeError("No suitable option")

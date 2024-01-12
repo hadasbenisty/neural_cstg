@@ -14,7 +14,8 @@ import torch.nn.functional as F
 __all__ = ['FC_STG_Layered_Param_modular_model_sigmoid', 'fc_stg_layered_param_modular_model_sigmoid']
 
 class FeatureSelector(nn.Module):
-    def __init__(self, hyper_input_dim, hyper_output_dim, hyper_hidden_dim, sigma=0.5, non_param_stg=False, train_sigma=False):
+    def __init__(self, hyper_input_dim, hyper_output_dim, hyper_hidden_dim, sigma=0.5, non_param_stg=False,
+                 train_sigma=False):
         super(FeatureSelector, self).__init__()
         # hyper_input_dim: input dimension for the hyper network i.e dimensionality of contextual input
         # hyper_output_dim: output dimension for the hyper network i.e dimensionality of explanatory features
@@ -45,7 +46,7 @@ class FeatureSelector(nn.Module):
 
     def forward(self, prev_x, B, axis=2):
         # compute the feature importance given B
-        _, stochastic_gate = self.get_feature_importance(B)  #z_d
+        stochastic_gate = self.get_feature_importance(B)  #z_d
         # mask the input with feature importance
         if self.non_param_stg:
             new_x = prev_x * stochastic_gate[None, :]
@@ -63,9 +64,8 @@ class FeatureSelector(nn.Module):
             self.sigma = nn.ReLU(self.sigma) + 0.01
         z = self.mu + (self.sigma) * self.noise.normal_() * self.training
         stochastic_gate = self.hard_sigmoid(z)
-        #return stochastic_gate
-        return self.mu, stochastic_gate #shira
-        
+        return stochastic_gate
+
     
     def hard_sigmoid(self, x):
         return torch.clamp(x, 0.0, 1.0)
@@ -80,7 +80,8 @@ class FeatureSelector(nn.Module):
         return self
 
 class FC_STG_Layered_Param_modular_model_sigmoid(nn.Module):
-    def __init__(self, input_dim, hidden_dim, output_dim, param_dim, hyper_hidden_dim, dropout, sigma, stg, classification, include_B_in_input=False,non_param_stg=False,train_sigma=False):
+    def __init__(self, input_dim, hidden_dim, output_dim, param_dim, hyper_hidden_dim, dropout, sigma, stg,
+                 classification, include_B_in_input=False,non_param_stg=False,train_sigma=False):
         super().__init__()
         # input_dim: input dimension for the network i.e dimensionality of explanatory features
         # hidden_dim: dimensionals of hidden layers in the network
@@ -136,7 +137,13 @@ class FC_STG_Layered_Param_modular_model_sigmoid(nn.Module):
 
         return x
     
-def fc_stg_layered_param_modular_model_sigmoid(input_dim,hidden_dim=[10],output_dim=1, param_dim=1, hyper_hidden_dim=[500], dropout=0, sigma=0.5, stg=True, classification=True, include_B_in_input=False, non_param_stg=False, train_sigma=False):
+def fc_stg_layered_param_modular_model_sigmoid(input_dim,hidden_dim=[10],output_dim=1, param_dim=1,
+                                               hyper_hidden_dim=[500], dropout=0, sigma=0.5, stg=True,
+                                               classification=True, include_B_in_input=False,
+                                               non_param_stg=False, train_sigma=False):
     
-    model = FC_STG_Layered_Param_modular_model_sigmoid(input_dim, hidden_dim, output_dim, param_dim, hyper_hidden_dim, dropout, sigma, stg,classification,include_B_in_input=include_B_in_input,non_param_stg=non_param_stg,train_sigma=train_sigma)
+    model = FC_STG_Layered_Param_modular_model_sigmoid(input_dim, hidden_dim, output_dim, param_dim,
+                                                       hyper_hidden_dim, dropout, sigma, stg,classification,
+                                                       include_B_in_input=include_B_in_input,
+                                                       non_param_stg=non_param_stg,train_sigma=train_sigma)
     return model

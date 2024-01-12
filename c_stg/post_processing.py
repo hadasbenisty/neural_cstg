@@ -14,7 +14,6 @@ import random
 from sklearn.metrics import confusion_matrix
 
 
-
 def post_process_flow(directory_name, date=None):
 
     # Parameters
@@ -73,16 +72,22 @@ def post_process_flow(directory_name, date=None):
 
     model.eval()
     unique_r = np.unique(Container.rte)
-    #alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+    # alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
     mu_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
-    stochastic_gate_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+    if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
+        w_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+    else:
+        w_vals = []
     acc_vals_per_r = np.zeros(len(unique_r))
     #conf_mat_per_r = []
     ri = 0
     for rval in np.unique(Container.rte):
         # alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
-        mu_vals[:, ri], stochastic_gate_vals[:, ri] = \
-            get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
+        if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
+            mu_vals[:, ri], w_vals[:, ri] = \
+                get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
+        elif params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid":
+            mu_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
         inds = [i for i, x in enumerate(Container.rte == rval) if x]
         x_test_tmp = Container.xte[inds, :]
         r_test_tmp = Container.rte[inds].reshape(-1, 1)
@@ -100,7 +105,7 @@ def post_process_flow(directory_name, date=None):
                  {'acc_train_array': acc_train_array, 'loss_train_array': loss_train_array,
                   'acc_test_array': acc_test_array, 'loss_test_array':loss_test_array,
                   'unique_r': unique_r, 'mu_vals': mu_vals,
-                  'stochastic_gate_vals': stochastic_gate_vals, 'acc_vals_per_r': acc_vals_per_r})
+                  'w_vals': w_vals, 'acc_vals_per_r': acc_vals_per_r})
 
     mat_name = hyperparameter_combination + "_Final_check" + ".mat"
     # chance level is calculated in DataProcessor
@@ -116,9 +121,9 @@ if __name__ == '__main__':
     #         '2024_01_07_04_40_12_animal_4575_date_04_11_19_flavors',
     #         '2024_01_07_05_55_30_animal_4575_date_04_15_19_flavors']
     # date = ['03_14_19', '03_19_19', '03_31_19', '04_03_19', '04_07_19', '04_11_19', '04_15_19']
-    name = ['2024_01_11_23_22_12_animal_4575_date_04_11_19_success',
-            '2024_01_11_23_35_52_animal_4575_date_04_15_19_success']
-    date = ['04_11_19', '04_15_19']
+    name = ['2024_01_12_14_35_17_animal_4575_date_03_31_19_success'
+            ,'2024_01_12_14_41_54_animal_4575_date_04_11_19_success']
+    date = ['03_31_19', '04_11_19']
 
     for n, d in zip(name, date):
         post_process_flow(n, d)

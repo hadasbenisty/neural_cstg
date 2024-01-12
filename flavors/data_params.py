@@ -11,7 +11,7 @@ class Data_params(object):
         self.date = '03_05_19'  # date of experiment
         self.outcome_keys = ['success']  # ['success'] all the outcomes to consider
         self.context_key = 'flavors'
-        self.note = ("")  # save in the log context for self use notes
+        self.note = ("4-8 time with the new model")  # save in the log context for self use notes
         # ---- post processing user input ----
         self.manual_random_seed = -1  # seed for not determensric operation
         # -----------------------------------
@@ -26,8 +26,8 @@ class Data_params(object):
         self.folds_num = 5  # cross validation
         self.start_time = -4  # sec
         self.end_time = 8  # sec
-        self.drop_time = 8 #1  # usually drop the first sec #Todo
-        self.total_time = 4 #-1  # -1 for all the data duration, else number of sec #Todo
+        self.drop_time = 8  #1  # usually drop the first sec #Todo
+        self.total_time = 4  #-1 # for all the data duration, else number of sec #Todo
         self.sample_per_sec = 30  # samples/sec
         self.window_size_avg = 1  # sec
         self.overlap_avg = 0.5  # sec

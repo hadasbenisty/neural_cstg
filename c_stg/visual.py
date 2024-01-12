@@ -57,19 +57,27 @@ def visual_results(path, mat_name, params, conf_mat_times=[-2,3,6]):
     sorted_mu_vals = mu_vals[ic_mus, :]
     mus = [mu_vals, sorted_mu_vals]
 
-    gates_vals = mat_data.get('stochastic_gate_vals', None)
-    fig_names_gates = ['Accuracy_per_r_&_Gates_values.png', 'Accuracy_per_r_&_Gates_values_ORGANIZED.png']
-    ic_gates = np.argsort(gates_vals[:, 0])
-    sorted_gates_vals = gates_vals[ic_gates, :]
-    gates = [gates_vals, sorted_gates_vals]
+    if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
+        w_vals = mat_data.get('w_vals', None)
+        fig_names_gates = ['Accuracy_per_r_&_Weights_values.png', 'Accuracy_per_r_&_Weights_values_ORGANIZED.png']
+        ic_gates = np.argsort(w_vals[:, 0])
+        sorted_w_vals = w_vals[ic_gates, :]
+        weights = [w_vals, sorted_w_vals]
 
-    alphas = [mus, gates]
-    fig_names = [fig_names_mus, fig_names_gates]
-    titles = ["Mu", "Gates"]
+        alphas = [mus, weights]
+        fig_names = [fig_names_mus, fig_names_gates]
+        titles = ["Mu", "Weights"]
+    else:
+        alphas = [mus]
+        fig_names = [fig_names_mus]
+        titles = ["Mu"]
+
 
 
     if params.context_key == 'flavors':
         for fig_name, alpha, title in zip(fig_names, alphas, titles):
+            if params.ML_model_name != "fc_stg_layered_param_modular_model_sigmoid_extension" and title == "Weights":
+                continue
             for sub_fig_name, sub_alpha in zip(fig_name, alpha):
                 info_df = pd.read_excel(params.info_excel_path, sheet_name=params.animal2sheet_num[params.animal])
                 flavors_list = info_df[info_df['folder'] == params.date]['flavors'].iloc[0].split('_')
@@ -95,6 +103,8 @@ def visual_results(path, mat_name, params, conf_mat_times=[-2,3,6]):
     elif params.context_key == 'time':
 
         for fig_name, alpha, title in zip(fig_names, alphas, titles):
+            if params.ML_model_name != "fc_stg_layered_param_modular_model_sigmoid_extension" and title == "Weights":
+                continue
             for sub_fig_name, sub_alpha in zip(fig_name, alpha):
                 time_valus = np.linspace(params.start_time, params.end_time, sub_alpha.shape[1])
                 fig = plt.figure(figsize=(12, 8))
