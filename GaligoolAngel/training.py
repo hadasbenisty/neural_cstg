@@ -97,6 +97,11 @@ def training_k_fold(model, features, y, n_splits=3):
                 # Backward pass and optimize
                 loss.backward()
                 optimizer.step()
+                for p in model.hypernetwork.parameters():
+                    p.data.clamp_(0, 1)
+                    # print(torch.min(p))
+                    # print(torch.max(p))
+
             tot_loss = tot_loss / len(train_y)
             # Validation phase
             model.eval()
