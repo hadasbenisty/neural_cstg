@@ -6,7 +6,7 @@ from training import training_k_fold
 import torch
 import scipy.io as io
 from visual_functions import calc_real_weights
-from plot_functions import plot_weights
+from plot_functions import plot_weights, plot_model_results
 
 # Check if CUDA is available
 if torch.cuda.is_available():
@@ -24,6 +24,7 @@ feature_dim = len(features.T)
 
 y = (torch.from_numpy(data_mat['y'])).T
 y = y.float()
+output_dim = len(y.T)
 
 # Initializing the model
 model = CSTGModel(feature_dim, output_dim)
@@ -43,8 +44,7 @@ for name, param in model.named_parameters():
     # Convert to numpy array
     model_params[name] = param.cpu().detach().numpy()
 
-print(sum(calc_real_weights((model.hypernetwork)) > 0))
-print(np.average(calc_real_weights(model.hypernetwork)))
+plot_model_results(model, features, y)
 plot_weights(model.hypernetwork)
 io.savemat(results_path, model_params)
 

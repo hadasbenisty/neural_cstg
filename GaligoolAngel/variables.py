@@ -1,5 +1,5 @@
 # Output Dimensions
-output_dim = 2
+output_dim = 0
 
 # Input Dimensions
 feature_dim = 0

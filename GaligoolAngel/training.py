@@ -80,6 +80,9 @@ def training_k_fold(model, features, y, n_splits=3):
                 # Compute Loss
                 loss = loss_function(outputs, train_y[i].unsqueeze(0))
 
+
+
+
                 # L1 Regularization for the Hypernetwork
                 l1_penalty = torch.tensor(0.).to(features.device)
                 for param in model.hypernetwork.parameters():
