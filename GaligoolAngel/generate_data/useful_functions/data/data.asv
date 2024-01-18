@@ -1,0 +1,4 @@
+datapath = "C:\Users\hadas-stud-group2\Documents\ProjectA\data";
+
+delete()
+save("useful_functions\data\data.mat");
