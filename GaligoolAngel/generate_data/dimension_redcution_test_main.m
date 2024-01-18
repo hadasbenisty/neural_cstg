@@ -1,7 +1,23 @@
 %% Load data from before
-addpath(genpath('.\'));
-load('workspace.mat');
-
+addpath(genpath('.\')); % Adding all the functions from the folders
+create_data_bool = 1; % Whether we want to build the data or
+% use the one we have
+if create_data_bool % Loading the raw data
+    labelsCTRL = {'train_1' 'train_2' 'train_3' 'train_4' ...
+        'train_5' 'train_6' 'train_7'};
+    labelsCNO = {'train_1' 'CNO_2' 'CNO_3' 'CNO_4' ...
+        'train_5' 'train_6' 'train_7'};
+    
+    animalsnames = {'DT141' 'DT155'};
+    animalsLabels = [0 1];
+    
+    chosen_animal = 1; % or 1
+    disp("loading data")
+    datapath = 'data/';
+    load(fullfile(datapath, animalsnames{chosen_animal}, 'data.mat'));
+else % Loading the processed data
+    load('workspace.mat');
+end
 %% Cutting the data in the 7th train session
 last_train_session = 7;
 data_all = data_all(:,:, train_stage <= last_train_session);

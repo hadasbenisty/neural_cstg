@@ -1,9 +1,9 @@
 % loading the data 
-load("python_analysis\paths.mat");
+load("data\paths\paths.mat");
 
-load(path_to_results);
+load(fullfile(results_path, 'results.mat'));
 
-load(path_to_data);
+load(fullfile(inputs_path, 'dataset.mat'));
 
 if size(y) ~= size(predictions)
     predictions = predictions';
@@ -13,6 +13,8 @@ end
 avg_error_percentage = mean(std(abs(Y - predictions), 1, 2) ./ ...
     std(abs(Y),1, 2));
 
+% Rebuild the Correlation matrix
+% CC = vectorToSymMatrix(predictions);
 %% Plot Stuff
 figure;
 

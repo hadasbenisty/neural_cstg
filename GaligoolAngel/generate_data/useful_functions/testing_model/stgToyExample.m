@@ -19,5 +19,5 @@ features = X_all;
 y = Y_tot;
 
 % Save Data
-load("useful_functions\data\data.mat");
-save(fullfile(datapath, 'dataset'), 'y', 'features');
+load("data\paths\paths.mat");
+save(fullfile(inputs_path, 'dataset'), 'y', 'features', 'Y_tot', 'Y', 'N');
