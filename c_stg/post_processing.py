@@ -54,7 +54,7 @@ def post_process_flow(directory_name, **kwargs):
 
     # Training
     # Load model architecture
-    model = models.__dict__[params.ML_model_name]\
+    model = c_stg.models.__dict__[params.ML_model_name]\
         (params.input_dim, hidden_dim, params.output_dim, params.param_dim, hyper_hidden_dim,
          params.dropout, sigma=params.sigma, include_B_in_input=params.include_B_in_input,
          non_param_stg=params.non_param_stg, train_sigma=params.train_sigma, classification=params.classification_flag)
