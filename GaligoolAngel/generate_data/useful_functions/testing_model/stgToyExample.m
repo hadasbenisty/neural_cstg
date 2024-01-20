@@ -4,20 +4,11 @@ number_features = number_outputs + 1000;
 num_meas = 1000;
 SNR = 10;
 
-% Create X and real Y
-X = randn([number_outputs, num_meas]);
-[Y,A] = createRandomLinearTransformation(X);
+input_creation_handle = @createToyInput;
 
-% add noise
-N = 1/SNR * randn(size(Y));
-Y_tot = Y + N;
-% Pad X
-X_fake = rand([number_features - number_outputs, num_meas]);
-X_all = [X ; X_fake];
-
-features = X_all;
-y = Y_tot;
-
+[Y, Y_tot, y, X, X_fake, X_all, features, N] = input_creation_handle(...
+    number_outputs, num_meas, SNR, number_features);
 % Save Data
 load("data\paths\paths.mat");
-save(fullfile(inputs_path, 'dataset'), 'y', 'features', 'Y_tot', 'Y', 'N');
+save(fullfile(inputs_path, 'dataset'), 'y', 'features', 'Y_tot', 'Y', 'N', ...
+    'SNR');

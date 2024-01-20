@@ -1,0 +1,42 @@
+\documentclass{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath} % For mathematical symbols
+\usepackage{amssymb}
+\usepackage{graphicx} % For including graphics
+\usepackage{hyperref} % For hyperlinks
+
+\title{Operator Idea}
+\author{Ariel Engelman}
+\date{\today}
+
+\begin{document}
+	
+	\maketitle
+	
+	
+	\section{Modeling the Mouse Brain as a Linear Dynamical System}
+	
+	In our study, we investigate the response of a mouse brain to sudden impulses. We conceptualize the mouse brain as a dynamical system and define an operator \( A \) to describe its time evolution. Specifically, we consider the following linear time evolution equation:
+	
+	\begin{equation}
+		\vec{n}[t + 1] = A \vec{n}[t]
+	\end{equation}
+	
+	Here, \( A \) represents the time evolution operator for the mouse brain system, and \( \vec{n}[t] \) denotes the state of the brain (in terms of neural activity) at time \( t \). We hypothesize that the operator \( A \) remains constant within each trial but may vary across different trials. Our goal is to identify this operator for each trial, leading to the linear equation:
+	
+	\begin{equation}
+		[\vec{n}[1], \vec{n}[2], \ldots, \vec{n}[N]] = A [\vec{n}[0], \vec{n}[1], \ldots, \vec{n}[N-1]]
+	\end{equation}
+	
+	where \( N \) represents the number of neurons in the system. This formulation results in a least squares problem, which we propose to solve using matrix decomposition techniques such as SVD (Singular Value Decomposition) and QR decomposition.
+	
+	By analyzing each trial, we obtain a distinct operator \( A \) for that trial. We then compute the average operator for each training session. To observe the evolution of these operators and identify key patterns, we apply Principal Component Analysis (PCA) to reduce the dimensions of the operators. This reduction enables us to visualize the progression of neural response patterns in a three-dimensional space defined by the three most significant components. We can then calculate the average operator for each train session, and plot it instead.
+	
+	\section{Losing Linearity}
+	When we lose the linearity of the problem we say that there is an operator that evolves the neurons activity but it is not linear with respect to the neurons. That means we get:
+	\begin{equation}
+		\vec{n}[t + 1] = A(\vec{n}[t])
+	\end{equation}
+	Where \( A\) can now be any function we can think of. When approaching s
+\end{document}

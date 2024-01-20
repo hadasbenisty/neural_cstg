@@ -199,8 +199,16 @@ xlabel('Train Session')
 ylabel('Sucess Rate')
 hold off;
 
+%% Calculating Y 
+output_dim = 2;
+dR1 = calc_Rdist(CC);
+[ aff_mat,sigma ] = CalcInitAff2D( dR1, 5 );
+configParams.maxInd = 5;
+diffusion_map = calcDiffusionMap(aff_mat,...
+    configParams, output_dim + 1); % Remove last param for default
 
 %% Saving Data
+load('data\paths\paths.mat');
 y = squeeze(diffusion_map);
 y = y ./ mean(abs(y), 2);
 features = squeeze(CC_features);
@@ -208,4 +216,4 @@ features = features ./ mean(features, 2);
 features_pca = (pca_cc_features * coeff(:, 1:30))';
 features_pca = features_pca ./ mean(features_pca, 2);
 
-save(fullfile(datapath, 'dataset'), 'y', 'features_pca', 'features');
+save(fullfile(inputs_path, 'dataset'), 'y', 'features_pca', 'features');

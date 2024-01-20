@@ -35,7 +35,7 @@ features.to(device)
 y.to(device)
 
 # Training the Model
-model = training_k_fold(model, features, y)
+model = training_k_fold(model, features, y, 3)
 
 # Forward pass
 predictions = model(features)

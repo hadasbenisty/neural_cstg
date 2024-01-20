@@ -1,3 +1,5 @@
+import math
+
 import torch.optim as optim
 import torch.nn as nn
 import torch
@@ -9,6 +11,8 @@ from variables import l1_lambda, l2_lambda
 # For regression tasks, you can use nn.MSELoss()
 # For classification tasks, you can use nn.CrossEntropyLoss() (if your output is class scores)
 # Adjust according to your specific task
+
+
 def training(model, features, y):
     loss_function = nn.MSELoss()
 
@@ -16,7 +20,7 @@ def training(model, features, y):
     optimizer = optim.Adam(model.parameters(), lr=0.001)
 
     # Training Loop
-    epochs = 20  # Number of epochs
+    epochs = 10  # Number of epochs
     for epoch in range(epochs):
         tot_loss = 0
         for sample in range(len(y)):
@@ -38,13 +42,16 @@ def training(model, features, y):
     return model
 
 
-def training_k_fold(model, features, y, n_splits=3):
+def training_k_fold(model, features, y, n_splits=-1):
     loss_function = nn.MSELoss()
 
     # K-Fold Cross-validation
+    if n_splits <= 0:
+        n_splits = int(math.sqrt(len(y)))
     kf = KFold(n_splits=n_splits)
 
     for fold, (train_index, val_index) in enumerate(kf.split(features)):
+        # model.reset()
         print(f"Fold {fold + 1}")
 
         # Split data into training and validation
@@ -94,7 +101,7 @@ def training_k_fold(model, features, y, n_splits=3):
                     l2_penalty += torch.norm(param, 2) ** 2
 
                 # Combine loss with regularization terms
-                loss += l1_lambda * l1_penalty + l2_lambda * l2_penalty
+                loss += l1_lambda * l1_penalty/len(train_y) + l2_lambda * l2_penalty/len(train_y)
                 tot_loss += loss.item()
 
                 # Backward pass and optimize
@@ -104,6 +111,44 @@ def training_k_fold(model, features, y, n_splits=3):
                     p.data.clamp_(0, 1)
                     # print(torch.min(p))
                     # print(torch.max(p))
+
+            #########################################
+
+            # # Zero the parameter gradients
+            # optimizer.zero_grad()
+            #
+            # # Forward pass
+            # outputs = model(train_features.unsqueeze(0))
+            #
+            # # Compute Loss
+            # loss = loss_function(outputs, train_y.unsqueeze(0))
+            #
+            #
+            #
+            #
+            # # L1 Regularization for the Hypernetwork
+            # l1_penalty = torch.tensor(0.).to(features.device)
+            # for param in model.hypernetwork.parameters():
+            #     l1_penalty += param.abs().sum()
+            #
+            # # L2 Regularization for the Prediction Network
+            # l2_penalty = torch.tensor(0.).to(features.device)
+            # for param in model.prediction_network.parameters():
+            #     l2_penalty += torch.norm(param, 2) ** 2
+            #
+            # # Combine loss with regularization terms
+            # loss += l1_lambda * l1_penalty + l2_lambda * l2_penalty
+            # tot_loss += loss.item()
+            #
+            # # Backward pass and optimize
+            # loss.backward()
+            # optimizer.step()
+            # for p in model.hypernetwork.parameters():
+            #     p.data.clamp_(0, 1)
+            #     # print(torch.min(p))
+            #     # print(torch.max(p))
+
+            ###############################################
 
             tot_loss = tot_loss / len(train_y)
             # Validation phase

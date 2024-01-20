@@ -1,0 +1,15 @@
+metadata_version: 1
+name: Network Dynamics in M1 During Learning of a Motor Task
+description: Code for network analysis of layer 2-3 cells of the primary motor cortex
+  of mice during learning of a motor task
+tags:
+- computational neuroscience
+- network dynamics
+- Riemannian Geometry
+authors:
+- name: anonymous
+  affiliations:
+  - name: anonymous
+corresponding_contributor:
+  name: anonymous
+  email: anonymous@gmail.com

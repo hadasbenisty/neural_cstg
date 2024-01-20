@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from variables import output_dim, feature_dim, eps
 
+
 class Hypernetwork(nn.Module):
     def __init__(self, feature_dim):
         super(Hypernetwork, self).__init__()
@@ -13,6 +14,9 @@ class Hypernetwork(nn.Module):
         return features * torch.max(torch.zeros(self.weights.size()),
                                     torch.min(torch.ones(self.weights.size()), self.weights +
                                               eps*torch.randn(size=self.weights.size())))
+
+    def reset(self):
+        self.weights.data.fill_(1.0)
 
 
 class PredictionNetwork(nn.Module):
@@ -29,6 +33,12 @@ class PredictionNetwork(nn.Module):
         x = self.fc3(x)
         return x
 
+    def reset(self):
+        for layer in self.children():
+            if hasattr(layer, 'reset_parameters'):
+                layer.reset_parameters()
+
+
 class CSTGModel(nn.Module):
     def __init__(self, feature_dim, output_dim):
         super(CSTGModel, self).__init__()
@@ -40,8 +50,13 @@ class CSTGModel(nn.Module):
         features = self.hypernetwork.forward(features)
 
         # Get predictions from the prediction network
-        predictions = self.prediction_network(features)
+        predictions = self.prediction_network.forward(features)
         return predictions
+
+    def reset(self):
+        print('reset model')
+        self.hypernetwork.reset()
+        self.prediction_network.reset()
 
 
 
