@@ -9,7 +9,7 @@ import seaborn as sns
 
 
 # Visualization of the result after post-processing
-def visual_results(path, mat_name, params, conf_mat_times=[-2,3,6]):
+def visual_results(path, mat_name, params):
     mat_path = os.path.join(path, mat_name)
     mat_data = spio.loadmat(mat_path)
 
@@ -71,8 +71,6 @@ def visual_results(path, mat_name, params, conf_mat_times=[-2,3,6]):
         alphas = [mus]
         fig_names = [fig_names_mus]
         titles = ["Mu"]
-
-
 
     if params.context_key == 'flavors':
         for fig_name, alpha, title in zip(fig_names, alphas, titles):

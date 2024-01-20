@@ -2,18 +2,18 @@ from datetime import datetime
 
 
 class Data_params(object):
-    def __init__(self):
+    def __init__(self, **kwargs):
         ######################
         # Data Parameters #
         ######################
         # ---- main user input ----
-        self.animal = '4575'  # mouse number
+        self.animal = '4458'  # mouse number
         self.date = '03_05_19'  # date of experiment
         self.outcome_keys = ['success']  # ['success'] all the outcomes to consider
-        self.context_key = 'flavors'
-        self.note = ("4-8 time with the new model")  # save in the log context for self use notes
+        self.context_key = 'time'
+        self.note = "all animals, beside 4757, old model"  # save in the log context for self use notes
         # ---- post processing user input ----
-        self.manual_random_seed = -1  # seed for not determensric operation
+        self.manual_random_seed = -1  # seed for not determensric operations
         # -----------------------------------
         self.mat_files_directory = '../data/'  # 'D:\\flavorsProject\data\\'  # '/home/shiralif/data/'
         self.result_directory = '../results/'  # '..\\results\\'  # '/home/shiralif/results/'
@@ -26,11 +26,14 @@ class Data_params(object):
         self.folds_num = 5  # cross validation
         self.start_time = -4  # sec
         self.end_time = 8  # sec
-        self.drop_time = 8  #1  # usually drop the first sec #Todo
-        self.total_time = 4  #-1 # for all the data duration, else number of sec #Todo
+        self.drop_time = 1  #8  # usually drop the first sec #Todo
+        self.total_time = -1  #4 # for all the data duration, else number of sec #Todo
         self.sample_per_sec = 30  # samples/sec
         self.window_size_avg = 1  # sec
         self.overlap_avg = 0.5  # sec
+
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
 
 def data_origanization_params(params):
@@ -51,12 +54,13 @@ def data_origanization_params(params):
     else:
         running_datetime = datetime.now()
         running_datetime = running_datetime.strftime("%Y_%m_%d_%H_%M_%S")
-        sub_res_directory = running_datetime + '_animal_' + params.animal + '_date_' + params.date + '_' + '_'.join(
-            params.outcome_keys)
+        sub_res_directory = running_datetime + '_animal_' + params.animal + '_date_' + params.date + '_' + '_'.join(params.outcome_keys)
         sub_res_directory.replace(':', '_').replace(' ', '_')
 
         params.res_directory = params.result_directory + sub_res_directory  # '/home/shiralif/results/'
     params.mat_files_directory = params.mat_files_directory + params.animal
     params.sheet_num = params.animal2sheet_num[params.animal]
+
+    # params.bar_graph = True if params.context_key == 'flavors' else False
 
     return params

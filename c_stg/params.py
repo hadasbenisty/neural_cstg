@@ -20,10 +20,10 @@ class Cstg_params(object):
         ######################
         self.classification_flag = True  # relevant for model init
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.ML_model_name =  "fc_stg_layered_param_modular_model_sigmoid_extension" #"fc_stg_layered_param_modular_model_sigmoid"
+        self.ML_model_name = "fc_stg_layered_param_modular_model_sigmoid" #"fc_stg_layered_param_modular_model_sigmoid_extension"
         self.include_linear_model = False
         self.post_process_mode = False  # after findig hyper-parameters
-        self.num_epoch = 50  #Todo
+        self.num_epoch = 100
         self.batch_size = 32
         # 3. parametric stg
         self.stg, self.include_B_in_input, self.non_param_stg = (True, False, False)
@@ -39,7 +39,8 @@ class Cstg_params(object):
         # stg,include_B_in_input,non_param_stg = (False,True,False)
 
 
-class Params(Cstg_params, Data_params):
-    def __init__(self):
-        Data_params.__init__(self)
+class Params_config(Cstg_params, Data_params):
+    def __init__(self, **kwargs):
         Cstg_params.__init__(self)
+        Data_params.__init__(self, **kwargs)
+

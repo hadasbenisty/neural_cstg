@@ -214,6 +214,7 @@ class AnimalDataProcessor:
                 f.write("%s = %s\n" % ('end_time', self.Date_data.end_time))
         self.use_flag = self.Date_data.use_flag
         if not self.use_flag:
+            self.params = params
             return
 
         # The combined data from all chosen dates

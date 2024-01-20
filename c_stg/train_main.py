@@ -1,24 +1,23 @@
 # Imports
-from params import Params
+from c_stg.params import Params_config
 from flavors.data_params import data_origanization_params
 import os
 from flavors.data_processing import DataProcessor, DataContainer
 import scipy.io as spio
 import torch.utils.data as data_utils
 from flavors.utils import init_criterion, init_optimizer
-from training import *
-import models
+from c_stg.training import *
+import c_stg.models
 import time
 from sklearn.linear_model import LogisticRegression
-from post_processing import post_process_flow
+from c_stg.post_processing import post_process_flow
 from flavors.utils import acc_score, set_seed
 
 
-def main_workflow(date):
+def main_workflow(**kwargs):
     # Parameters
-    params = Params()
-    params.date = date
-    params = data_origanization_params(params)
+    params = Params_config(**kwargs)  # kwargs are arguments for Data_params
+    params = data_origanization_params(params)  # add res_directory property to params
 
     # Write running parameters to a text file
     os.makedirs(params.res_directory, exist_ok=True)
@@ -167,14 +166,8 @@ def main_workflow(date):
 
     print("----Start post-processing---")
     name = params.res_directory.split("\\")[-1]
-    post_process_flow(name, date=params.date)
+    post_process_flow(name, **kwargs)
     print("----FINISH----")
 
 
-if __name__ == '__main__':
-    from flavors.utils import get_subdirectories
-    dates = get_subdirectories('../data/4575')
-    dates = ['03_14_19', '03_19_19', '03_31_19', '04_11_19', '04_15_19']
-    for date in dates:
-        print(f"WORKING ON DATE:{date}")
-        main_workflow(date)
+

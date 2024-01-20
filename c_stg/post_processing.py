@@ -2,11 +2,11 @@
 from flavors.data_params import data_origanization_params
 from flavors.utils import hyperparameters_chosen_extraction, init_optimizer, init_criterion
 from flavors.data_processing import DataProcessor, DataContainer
-from visual import visual_results
-from params import Params
+from flavors.visual import visual_results
+from c_stg.params import Params_config
 import torch
-import models
-from training import train, test_process, get_prob_alpha
+import c_stg.models
+from c_stg.training import train, test_process, get_prob_alpha
 import numpy as np
 import torch.utils.data as data_utils
 import scipy.io as spio
@@ -14,15 +14,13 @@ import random
 from sklearn.metrics import confusion_matrix
 
 
-def post_process_flow(directory_name, date=None):
+def post_process_flow(directory_name, **kwargs):
 
     # Parameters
-    params = Params()
-    params = data_origanization_params(params)
+    params = Params_config(**kwargs)
     params.post_process_mode = True  # flag for post-processing
     params.infer_directory = params.result_directory + directory_name
-    if date is not None:
-        params.date = date
+    params = data_origanization_params(params)
 
     if params.manual_random_seed != -1:  # -1 for no setting
         random.seed(params.manual_random_seed)
@@ -121,9 +119,10 @@ if __name__ == '__main__':
     #         '2024_01_07_04_40_12_animal_4575_date_04_11_19_flavors',
     #         '2024_01_07_05_55_30_animal_4575_date_04_15_19_flavors']
     # date = ['03_14_19', '03_19_19', '03_31_19', '04_03_19', '04_07_19', '04_11_19', '04_15_19']
-    name = ['2024_01_12_14_35_17_animal_4575_date_03_31_19_success'
-            ,'2024_01_12_14_41_54_animal_4575_date_04_11_19_success']
-    date = ['03_31_19', '04_11_19']
+    name = ['2024_01_14_05_36_33_animal_4756_date_05_30_19_success',
+            '2024_01_14_06_43_24_animal_4756_date_06_11_19_success']
+    date = ['05_30_19', '06_11_19']
+    animal = ['4756', '4756']
 
-    for n, d in zip(name, date):
-        post_process_flow(n, d)
+    for n, a, d in zip(name, animal, date):
+        post_process_flow(n, a, d)

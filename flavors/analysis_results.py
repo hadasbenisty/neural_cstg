@@ -6,9 +6,9 @@ import seaborn as sns
 import re
 import pandas as pd
 import matplotlib.gridspec as gridspec
-from c_stg.params import Params
 from data_processing import DataProcessor
 from data_params import data_origanization_params
+from c_stg.params import Params_config
 
 def extract_value(file_path, key, occurrence=1):
     """
@@ -36,11 +36,18 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
     #
     # date2idx = {'05.03.19': 0, '10.03.19': 1, '14.03.19': 2, '19.03.19': 3, '31.03.19': 4, '03.04.19': 5, '07.04.19': 6,
     #             '11.04.19': 7, '15.04.19': 8}
-    date2idx = {'14.03.19': 0, '19.03.19': 1, '31.03.19': 2, '03.04.19': 3, '07.04.19': 4,
-                '11.04.19': 5, '15.04.19': 6}
+    # date2idx = {'14.03.19': 0, '19.03.19': 1, '31.03.19': 2, '03.04.19': 3, '07.04.19': 4,
+    #             '11.04.19': 5, '15.04.19': 6}
+    # date2idx = {'01.05.19': 0, '14.05.19': 1, '19.05.19': 2, '21.05.19': 3, '23.05.19': 4,
+    #              '26.05.19': 5, '28.05.19': 6, '30.05.19': 7, '17.06.19': 8, '23.06.19': 9}
+    # date2idx = {'14.05.19': 0, '19.05.19': 1, '21.05.19': 2, '23.05.19': 3,
+    #               '26.05.19': 4, '28.05.19': 5, '30.05.19': 6, '11.06.19': 7, '13.06.19': 8}
+    #date2idx = {'22.01.19': 0, '24.01.19': 1, '28.01.19': 2, '24.02.19': 3}
+    date2idx= {'10.07.19': 0, '14.07.19': 1, '16.07.19': 2, '18.07.19': 3, '21.07.19': 4, '23.07.19': 5, '25.07.19': 6}
+    date2idx = {'03.07.19': 0, '07.07.19': 1, '16.07.19': 2, '01.08.19': 3, '07.08.19': 4, '15.08.19': 5}
     num_dates = len(date2idx)
 
-    alpha_eff_per_nue_all = np.zeros((num_dates, 306))
+    mu_eff_per_nue_all = np.zeros((num_dates, 386))
     thresholds_list = [None]*num_dates
     date_list = [None]*num_dates
     flavors_list = [None]*num_dates
@@ -48,7 +55,7 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
     type2_list = [None]*num_dates
 
     all_acc_vals_per_r = np.full((num_dates, 4), None, dtype=object)
-    all_alpha_vals = []
+    all_mu_vals = []
 
     # Create a figure for flavors correlation figure for flavors context
     fig = plt.figure(figsize=(20, 10))  # Width for 4 plots, height for 2 plots
@@ -74,22 +81,22 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
 
                     data = scipy.io.loadmat(mat_path)
                     acc_vals_per_r = data['acc_vals_per_r'][0]
-                    alpha_vals = data['alpha_vals']
+                    mu_vals = data['mu_vals']
 
                     log_file = os.path.join(os.path.join(directory, subdir), "log.txt")
                     start_time = float(extract_value(log_file, "start_time", occurrence=1))
                     end_time = float(extract_value(log_file, "end_time", occurrence=2))
                     chance_level = float(extract_value(log_file, "chance_level", occurrence=1))
 
-                    if context == 'time:':
+                    if context == 'time':
                         time_values = np.linspace(start_time, end_time, acc_vals_per_r.shape[0])
                         time_with_enough_acc = np.logical_and(acc_vals_per_r > chance_level, time_values > 0)
                         #time_with_enough_acc = np.logical_and(acc_vals_per_r > chance_level, time_values <= 0)
                         #time_with_enough_acc = np.logical_and(acc_vals_per_r > chance_level, time_values > 2, time_values < 4)
                         #time_with_enough_acc = time_values <= 0
-                        alpha_eff_per_nue = np.mean(alpha_vals[:, time_with_enough_acc], axis=1)
+                        mu_eff_per_nue = np.mean(mu_vals[:, time_with_enough_acc], axis=1)
 
-                        alpha_eff_per_nue_all[date2idx[date], :] = alpha_eff_per_nue
+                        mu_eff_per_nue_all[date2idx[date], :] = mu_eff_per_nue
 
                     elif context == 'flavors':
                         if acc_vals_per_r.shape[0] == 3:
@@ -97,7 +104,7 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
                         elif acc_vals_per_r.shape[0] == 4:
                             all_acc_vals_per_r[date2idx[date], :] = acc_vals_per_r
 
-                        flavors_corr_mat = np.corrcoef(np.transpose(alpha_vals))  # Pearson correlation coefficient
+                        flavors_corr_mat = np.corrcoef(np.transpose(mu_vals))  # Pearson correlation coefficient
                         #plt.figure(figsize=(10, 10))
                         vmin, vmax = min(vmin, flavors_corr_mat.min()), max(vmax, flavors_corr_mat.max())
 
@@ -114,7 +121,7 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
                         ax.set_xticklabels(flavors, rotation=0)
                         ax.set_yticklabels(flavors, rotation=0)
 
-                    all_alpha_vals.append(alpha_vals)
+                    all_mu_vals.append(mu_vals)
 
                     thresholds_list[date2idx[date]] = chance_level
                     date_list[date2idx[date]] = date
@@ -139,8 +146,8 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
                        zip(date_list, type1_list, flavors_list, type2_list)]
 
     if context == 'time':
-        plt.figure(figsize=(10, 10))
-        ax = sns.heatmap(np.transpose(alpha_eff_per_nue_all), annot=False, cmap="YlGnBu", cbar=True)
+        plt.figure(figsize=(15, 10))
+        ax = sns.heatmap(np.transpose(mu_eff_per_nue_all), annot=False, cmap="YlGnBu", cbar=True)
         plt.title('Changes in Neurons States Across Dates'+'\n'+sub_title)
         plt.ylabel('Neurons States')
         ax.set_xticklabels(combined_labels, rotation=0)
@@ -150,37 +157,36 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
         # Find in/active neurons
         max_th = 0.9
         min_th = 0.2
-        active_neurons_all_dates = np.all(alpha_eff_per_nue_all > max_th, axis=0)
+        active_neurons_all_dates = np.all(mu_eff_per_nue_all > max_th, axis=0)
         active_neurons_all_dates = np.where(active_neurons_all_dates)[0]
         print("active_neurons_all_dates:")
         print(active_neurons_all_dates)
-        inactive_neurons_all_dates = np.all(alpha_eff_per_nue_all < min_th, axis=0)
+        inactive_neurons_all_dates = np.all(mu_eff_per_nue_all < min_th, axis=0)
         inactive_neurons_all_dates = np.where(inactive_neurons_all_dates)[0]
         print("inactive_neurons_all_dates")
         print(inactive_neurons_all_dates)
 
         # Change in order for better visualization
-        ic = np.argsort(np.transpose(alpha_eff_per_nue_all)[:, -1])
-        sorted_alpha_eff_per_nue = np.transpose(alpha_eff_per_nue_all)[np.flip(ic), :]
-        plt.figure(figsize=(10, 10))
-        ax = sns.heatmap(sorted_alpha_eff_per_nue, annot=False, cmap="YlGnBu", cbar=True)
+        ic = np.argsort(np.transpose(mu_eff_per_nue_all)[:, -1])
+        sorted_mu_eff_per_nue = np.transpose(mu_eff_per_nue_all)[np.flip(ic), :]
+        plt.figure(figsize=(15, 10))
+        ax = sns.heatmap(sorted_mu_eff_per_nue, annot=False, cmap="YlGnBu", cbar=True)
         plt.title('Changes in Neurons States Across Dates'+'\n'+sub_title)
         plt.ylabel('Neurons States')
         ax.set_xticklabels(combined_labels, rotation=0)
-        #plt.xlabel('Dates')
+        plt.tight_layout()
         plt.savefig(os.path.join(directory, sub_title+'neurons_states_across_dates_organized.png'))
 
 
         # Calculate the correlation matrix between each of the dates
-        correlation_matrix = np.corrcoef(alpha_eff_per_nue_all)  # Pearson correlation coefficient
-        plt.figure(figsize=(10, 10))
+        correlation_matrix = np.corrcoef(mu_eff_per_nue_all)  # Pearson correlation coefficient
+        plt.figure(figsize=(15, 10))
         ax = sns.heatmap(correlation_matrix,
                     annot=True, cmap='coolwarm', vmin=-1, vmax=1, square=True)
         plt.title('Correlation Matrix across dates experiments'+'\n'+sub_title)
-        #plt.xlabel('Dates')
         ax.set_xticklabels(combined_labels, rotation=0)
-        #plt.ylabel('Dates')
         ax.set_yticklabels(combined_labels, rotation=0)
+        plt.tight_layout()
         plt.savefig(os.path.join(directory, sub_title + 'Dates_correlation.png'))
 
     elif context == "flavors":
@@ -203,14 +209,14 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
         for idx_flavor, flavor in enumerate(flavors):
             neu_vs_date_mat = None
             dates_inds_list = []
-            for idx_date in range(len(all_alpha_vals)):
-                if idx_flavor + 1 > all_alpha_vals[idx_date].shape[1]:
+            for idx_date in range(len(all_mu_vals)):
+                if idx_flavor + 1 > all_mu_vals[idx_date].shape[1]:
                     continue
                 else:
                     if neu_vs_date_mat is None:
-                        neu_vs_date_mat = all_alpha_vals[idx_date][:, idx_flavor]
+                        neu_vs_date_mat = all_mu_vals[idx_date][:, idx_flavor]
                     else:
-                        neu_vs_date_mat = np.vstack((neu_vs_date_mat, all_alpha_vals[idx_date][:, idx_flavor]))
+                        neu_vs_date_mat = np.vstack((neu_vs_date_mat, all_mu_vals[idx_date][:, idx_flavor]))
                     dates_inds_list.append(idx_date)
 
             dates_corr_mat = np.corrcoef(neu_vs_date_mat)  # Pearson correlation coefficient
@@ -225,7 +231,7 @@ def find_indicative_neurons(directory, excel_df, context, sub_title=""):
 
 def open_gates_visual(directory, date, min_th=0.2, max_th=0.8, num_neu=5):
 
-    params = Params()
+    params = Params_config()
     params.date = date
     params = data_origanization_params(params)
     assert params.context_key == 'time', "this function only suitable for time context option"
@@ -246,10 +252,10 @@ def open_gates_visual(directory, date, min_th=0.2, max_th=0.8, num_neu=5):
             mat_path = os.path.join(directory, file)
             mat_data = scipy.io.loadmat(mat_path)
             acc_vals_per_r = mat_data['acc_vals_per_r'][0]
-            alpha_vals = mat_data['alpha_vals']
+            mu_vals = mat_data['mu_vals']
 
-            begin_low = alpha_vals[:, 0] < min_th
-            end_high = alpha_vals[:, -1] > max_th
+            begin_low = mu_vals[:, 0] < min_th
+            end_high = mu_vals[:, -1] > max_th
             opened_neuron_indices = np.where(begin_low & end_high)[0]
 
     fig = plt.figure(figsize=(10, 20))  # Width for 4 plots, height for 2 plots
@@ -259,14 +265,14 @@ def open_gates_visual(directory, date, min_th=0.2, max_th=0.8, num_neu=5):
     ax.plot(time, acc_vals_per_r)
     plt.xlabel("Time [sec]")
     plt.ylabel("Accuracy")
-    ax.axvline(x=0, color='red', linestyle='--')  # Adding vertical line at 0 for Alpha Vals
+    ax.axvline(x=0, color='red', linestyle='--')  # Adding vertical line at 0 for mu Vals
 
-    # all alpha_vals
+    # all mu_vals
     ax = plt.subplot(gs[1])
-    ic = np.argsort(alpha_vals[:, 0])
-    sorted_alpha_vals = alpha_vals[ic, :]
-    cax = ax.imshow(sorted_alpha_vals, aspect='auto', extent=[time[0], time[-1], 0, alpha_vals.shape[0]])
-    ax.axvline(x=0, color='red', linestyle='--')  # Adding vertical line at 0 for Alpha Vals
+    ic = np.argsort(mu_vals[:, 0])
+    sorted_mu_vals = mu_vals[ic, :]
+    cax = ax.imshow(sorted_mu_vals, aspect='auto', extent=[time[0], time[-1], 0, mu_vals.shape[0]])
+    ax.axvline(x=0, color='red', linestyle='--')  # Adding vertical line at 0 for mu Vals
     plt.xlabel("Time [sec]")
     plt.ylabel("#neuron")
     ax_colorbar = plt.subplot(gs[2])
@@ -281,11 +287,11 @@ def open_gates_visual(directory, date, min_th=0.2, max_th=0.8, num_neu=5):
             ax_idx += 1
         neu_idx = chosen[i]#opened_neuron_indices[i+20]
 
-        # alphas vs time per neuron
+        # mus vs time per neuron
         ax = plt.subplot(gs[ax_idx])
         ax_idx += 1
         sub_idx += 1
-        ax.plot(time, alpha_vals[neu_idx, :])
+        ax.plot(time, mu_vals[neu_idx, :])
         ax.axvline(x=0, color='red', linestyle='--')
         plt.xlabel("Time [sec]")
         plt.ylabel(f"Cell weight {i}")
@@ -316,14 +322,14 @@ def open_gates_visual(directory, date, min_th=0.2, max_th=0.8, num_neu=5):
 
 
 excel_path = '../data/animals_db_selected.xlsx'
-excel_df = pd.read_excel(excel_path, sheet_name=1)
-directory = '..\\results\\2024_01_01_20_48_09_animal_4575_date_03_19_19_success'
-date = '03_19_19'
-#sub_title = 'after tone with enough acc '
+excel_df = pd.read_excel(excel_path, sheet_name=0)
+directory = '..\\results\\4458_0'
+# date = '03_19_19'
+sub_title = 'after tone with enough acc '
 #sub_title = 'before tone with enough acc '
 #sub_title = 'after tone, 2-4 sec, with enough acc '
 #sub_title = 'before tone with no acc th'
 #thresholds = find_indicative_neurons(directory, excel_df, sub_title)
-# ba = find_indicative_neurons(directory, excel_df, context="flavors")
-open_gates_visual(directory, date)
+#open_gates_visual(directory, date)
+ba = find_indicative_neurons(directory, excel_df, context="time", sub_title=sub_title)
 print("end")
