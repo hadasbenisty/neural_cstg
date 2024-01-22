@@ -40,13 +40,7 @@ def init_optimizer(model, learning_rate):
     return optimizer
 
 
-def norm_minmax(x):
-    if len(np.unique(x)) == 1:
-        return x
-    m = np.min(x)
-    M = np.max(x)
-    x = (x - m) / (M - m)
-    return x
+
 
 
 def hyperparameters_chosen_extraction(params):

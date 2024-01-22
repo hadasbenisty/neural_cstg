@@ -1,22 +1,27 @@
 # Imports
 from c_stg.params import Params_config
-from flavors.data_params import data_origanization_params
 import os
-from flavors.data_processing import DataProcessor, DataContainer
 import scipy.io as spio
 import torch.utils.data as data_utils
-from flavors.utils import init_criterion, init_optimizer
 from c_stg.training import *
 import c_stg.models
 import time
 from sklearn.linear_model import LogisticRegression
 from c_stg.post_processing import post_process_flow
-from flavors.utils import acc_score, set_seed
+from c_stg.utils import import_per_data_type
+from c_stg.data_processing import DataContainer
 
 
-def main_workflow(**kwargs):
+#def main_workflow(data_type='flavors', **kwargs):
+def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
+    # Specific imports
+    (acc_score, set_seed, init_criterion, init_optimizer, DataProcessor, data_origanization_params, Data_params,
+     hyperparameters_chosen_extraction, visual_results) = \
+        (import_per_data_type(data_type))
+
     # Parameters
-    params = Params_config(**kwargs)  # kwargs are arguments for Data_params
+    #params = Params_config(data_type, **kwargs)  # kwargs are arguments for Data_params
+    params = Params_config(data_type, cstg_kwargs=cstg_args, data_kwargs=data_args)
     params = data_origanization_params(params)  # add res_directory property to params
 
     # Write running parameters to a text file
@@ -85,27 +90,33 @@ def main_workflow(**kwargs):
                         filename = os.path.join(params.res_directory, hyperparameter_combination,
                                                 "selfold" + str(fold) + ".mat")
 
-                        # uneffective_flag = True
-                        # while uneffective_flag:
-                            #set_seed(int(time.time()))
-                        # Data
-                        Container = DataContainer(params, data, fold)
-                        train_Dataloader, dev_Dataloader, test_Dataloader = Container.get_Dataloaders(params)
+                        uneffective_flag = True
+                        num_iter = 0
+                        while uneffective_flag:
+                            print(int(time.time()))
+                            set_seed(int(time.time()))
+                            # Data
+                            Container = DataContainer(params, data, fold)
+                            train_Dataloader, dev_Dataloader, test_Dataloader = Container.get_Dataloaders(params)
 
-                        # Load model architecture
-                        model = c_stg.models.__dict__[params.ML_model_name] \
-                            (params.input_dim, hidden_dim, params.output_dim, params.param_dim, hyper_hidden_dim,
-                             params.dropout, sigma=params.sigma, include_B_in_input=params.include_B_in_input,
-                             non_param_stg=params.non_param_stg, train_sigma=params.train_sigma,
-                             classification=params.classification_flag)
+                            # Load model architecture
+                            model = c_stg.models.__dict__[params.ML_model_name] \
+                                (params.input_dim, hidden_dim, params.output_dim, params.param_dim, hyper_hidden_dim,
+                                 params.dropout, sigma=params.sigma, include_B_in_input=params.include_B_in_input,
+                                 non_param_stg=params.non_param_stg, train_sigma=params.train_sigma,
+                                 classification=params.classification_flag)
 
-                        model = model.to(params.device).float()
-                        criterion = init_criterion(params)
-                        optimizer = init_optimizer(model, learning_rate)
+                            model = model.to(params.device).float()
+                            criterion = init_criterion(params)
+                            optimizer = init_optimizer(model, learning_rate)
 
-                        train_acc_array, train_loss_array, dev_acc_array, dev_loss_array, uneffective_flag = \
-                            train(params, model, train_Dataloader, dev_Dataloader, criterion, optimizer,
-                                  stg_regularizer)
+                            train_acc_array, train_loss_array, dev_acc_array, dev_loss_array, uneffective_flag = \
+                                train(params, model, train_Dataloader, dev_Dataloader, criterion, optimizer,
+                                      stg_regularizer, acc_score)
+
+                            num_iter += 1
+                            if num_iter == 20:
+                                uneffective_flag=False
 
                         print("-----------------dev acc fold" + str(fold) + " is:" + str(dev_acc_array[-1]))
                         acc_dev_folds.append(dev_acc_array[-1])
@@ -136,7 +147,8 @@ def main_workflow(**kwargs):
                             test_dataloader_tmp = torch.utils.data.DataLoader(test_set_tmp,
                                                                               batch_size=params.batch_size,
                                                                               shuffle=False)
-                            acc_dev, _, _, _ = test_process(params, model, test_dataloader_tmp, criterion, stg_regularizer)
+                            acc_dev, _, _, _ = test_process(params, model, test_dataloader_tmp, criterion,
+                                                            stg_regularizer, acc_score)
                             acc_vals_per_r[ri] = acc_dev
                             ri += 1
 
@@ -166,7 +178,7 @@ def main_workflow(**kwargs):
 
     print("----Start post-processing---")
     name = params.res_directory.split("\\")[-1]
-    post_process_flow(name, **kwargs)
+    post_process_flow(data_type, name, cstg_args={}, data_args={})
     print("----FINISH----")
 
 

@@ -2,11 +2,10 @@ import numpy as np
 import torch
 import scipy.io
 import torch.nn as nn
-from flavors.utils import acc_score
 
 
 # Training
-def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer, stg_regularizer, final_test=False):
+def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer, stg_regularizer, acc_score):
 
     acc_train_array = [0]
     loss_train_array = [0]
@@ -45,19 +44,19 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
 
         model.eval()
 
-        acc_train, loss_train, _, _ = test_process(params, model, train_dataloader, criterion, stg_regularizer)
-        # if acc_train == acc_train_array[-1]/100:
-        #     same_acc_count += 1
-        #     if same_acc_count == 20:
-        #         uneffective_learn = True
-        #         return acc_train_array, loss_train_array, acc_dev_array, loss_dev_array, uneffective_learn
-        # else:
-        #     same_acc_count = 0
+        acc_train, loss_train, _, _ = test_process(params, model, train_dataloader, criterion, stg_regularizer, acc_score)
+        if acc_train == acc_train_array[-1]/100:
+            same_acc_count += 1
+            if same_acc_count == 40:
+                uneffective_learn = True
+                return acc_train_array, loss_train_array, acc_dev_array, loss_dev_array, uneffective_learn
+        else:
+            same_acc_count = 0
         acc_train_array.append(acc_train * 100)
         loss_train_array.append(loss_train)
         print(f"acc train :{acc_train_array[-1]}")
 
-        acc_dev, loss_dev, _, _ = test_process(params, model, dev_dataloader, criterion, stg_regularizer)
+        acc_dev, loss_dev, _, _ = test_process(params, model, dev_dataloader, criterion, stg_regularizer, acc_score)
         acc_dev_array.append(acc_dev * 100)
         loss_dev_array.append(loss_dev)
         print(f"acc dev :{acc_dev_array[-1]}")
@@ -75,7 +74,7 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
     return acc_train_array, loss_train_array, acc_dev_array, loss_dev_array, uneffective_learn
 
 
-def test_process(params, model, test_dataloader, criterion, stg_regularizer):
+def test_process(params, model, test_dataloader, criterion, stg_regularizer, acc_score):
 
     y_pred = None
     all_targets = None
@@ -129,7 +128,6 @@ def test_process(params, model, test_dataloader, criterion, stg_regularizer):
 
     acc = acc_score(all_targets, y_pred, params)
     loss = train_loss / train_count
-
 
     return acc, loss, all_targets, labels_pred
 

@@ -11,7 +11,7 @@ class Data_params(object):
         self.date = '03_05_19'  # date of experiment
         self.outcome_keys = ['success']  # ['success'] all the outcomes to consider
         self.context_key = 'time'
-        self.note = "all animals, beside 4757, old model"  # save in the log context for self use notes
+        self.note = "new model, 4458 with flavors context and success classification, 4-8 time, with 40 times same acc until run again"  # save in the log context for self use notes
         # ---- post processing user input ----
         self.manual_random_seed = -1  # seed for not determensric operations
         # -----------------------------------
@@ -21,13 +21,13 @@ class Data_params(object):
         self.outcome_options = ['success', 'fake', 'grain', 'sucrose', 'quinine', 'flavors']  # labels options, flavors include all the successful tastes and the failure
         self.context_options = ['time', 'flavors']
         self.animal2sheet_num = {'4458': 0, '4575': 1, '4754': 2,
-                                 '4756': 3, '4880': 4, '4882': 5, '4940': 6}  # excel sheet num
-        self.flavors2num = {'g': 1, 's': 2, 'q': 3, 'f': 4, 'fail': 0}
+                                 '4756': 3, '4880': 4, '4882': 5, '4940': 6, '1111': 7}  # excel sheet num
+        self.flavors2num = {'g': 1, 's': 2, 'q': 3, 'r': 4, 'f': 5, 'fail': 0}
         self.folds_num = 5  # cross validation
         self.start_time = -4  # sec
         self.end_time = 8  # sec
         self.drop_time = 1  #8  # usually drop the first sec #Todo
-        self.total_time = -1  #4 # for all the data duration, else number of sec #Todo
+        self.total_time = -1  #4 # -1 for all the data duration, else number of sec #Todo
         self.sample_per_sec = 30  # samples/sec
         self.window_size_avg = 1  # sec
         self.overlap_avg = 0.5  # sec

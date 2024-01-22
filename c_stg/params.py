@@ -1,9 +1,8 @@
 import torch
-from flavors.data_params import Data_params
-
+import importlib
 
 class Cstg_params(object):
-    def __init__(self):
+    def __init__(self,  **kwargs):
         ######################
         # Model Parameters #
         ######################
@@ -20,10 +19,10 @@ class Cstg_params(object):
         ######################
         self.classification_flag = True  # relevant for model init
         self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.ML_model_name = "fc_stg_layered_param_modular_model_sigmoid" #"fc_stg_layered_param_modular_model_sigmoid_extension"
+        self.ML_model_name = "fc_stg_layered_param_modular_model_sigmoid_extension" #"fc_stg_layered_param_modular_model_sigmoid"
         self.include_linear_model = False
         self.post_process_mode = False  # after findig hyper-parameters
-        self.num_epoch = 100
+        self.num_epoch = 50  # Todo
         self.batch_size = 32
         # 3. parametric stg
         self.stg, self.include_B_in_input, self.non_param_stg = (True, False, False)
@@ -38,9 +37,19 @@ class Cstg_params(object):
         # # 1b. no gates - with contextual information feeding into classifier
         # stg,include_B_in_input,non_param_stg = (False,True,False)
 
+        for key, value in kwargs.items():
+            setattr(self, key, value)
 
-class Params_config(Cstg_params, Data_params):
-    def __init__(self, **kwargs):
-        Cstg_params.__init__(self)
-        Data_params.__init__(self, **kwargs)
+
+def Params_config(data_type,  cstg_kwargs={}, data_kwargs={}):
+    data_params = importlib.import_module(f'{data_type}.data_params')
+    Data_params = getattr(data_params, 'Data_params')
+
+    class Params_config_inner(Cstg_params, Data_params):
+        def __init__(self, cstg_kwargs, data_kwargs):
+
+            Cstg_params.__init__(self, **cstg_kwargs)
+            Data_params.__init__(self, **data_kwargs)
+
+    return Params_config_inner(cstg_kwargs, data_kwargs)
 

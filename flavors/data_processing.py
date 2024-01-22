@@ -4,10 +4,6 @@ import numpy as np
 from sklearn.model_selection import KFold, train_test_split
 import scipy.io as spio
 from scipy import stats
-import torch.utils.data as data_utils
-import torch
-from flavors.utils import norm_minmax
-
 
 class DateProcessor:
     def __init__(self, params, matfile_path, relevent_idx, date_info):
@@ -44,7 +40,7 @@ class DateProcessor:
             # 1 for success, 0 for failre
             outcomes = []
             allowed_flavors = []
-            for flavor in self.date_flavors:
+            for flavor in self.date_flavors: #Todo: add option for 'r' regular
                 if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
                     flavor_array = self.data['BehaveData']['grain'][0][0]['indicatorPerTrial'][0][0]
                 elif flavor == 's':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
@@ -114,7 +110,7 @@ class DateProcessor:
             context = []
             allowed_flavors = []
             for flavor in self.date_flavors:
-                if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'r': 4, 'f': 45}
                     flavor_array = self.data['BehaveData']['grain'][0][0]['indicatorPerTrial'][0][0]
                 elif flavor == 's':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
                     flavor_array = self.data['BehaveData']['sucrose'][0][0]['indicatorPerTrial'][0][0]
@@ -122,6 +118,8 @@ class DateProcessor:
                     flavor_array = self.data['BehaveData']['quinine'][0][0]['indicatorPerTrial'][0][0]
                 elif flavor == 'f':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
                     flavor_array = self.data['BehaveData']['fake'][0][0]['indicatorPerTrial'][0][0]
+                elif flavor == 'r':
+                    flavor_array = self.data['BehaveData']['regular'][0][0]['indicatorPerTrial'][0][0]
                 else:
                     raise ValueError("There is no flavor like this")
                 num_flavor = self.flavors2num[flavor]
@@ -192,6 +190,7 @@ class DateProcessor:
         self.output_label = self.get_output_labels(outcome_keys, eff_t_len)
 
         self.context_feat = self.get_context_feat(context_key, eff_t_len)
+
 
 class AnimalDataProcessor:
     def __init__(self, params):
@@ -336,61 +335,7 @@ class DataProcessor(AnimalDataProcessor):
         AnimalDataProcessor.__init__(self, params)
 
 
-class DataContainer:
-    def __init__(self, params, data, fold):
 
-        # train set
-        self.xtr = data.explan_feat[data.traininds[fold], :]
-        self.ytr = data.output_label[data.traininds[fold]]
-        self.rtr = data.context_feat[data.traininds[fold]]
-        self.rtr = 2 * (norm_minmax(self.rtr.reshape(-1, 1)) - 0.5)
-        # test set
-        self.xte = data.explan_feat[data.testinds[fold], :]
-        self.yte = data.output_label[data.testinds[fold]]
-        self.rte = data.context_feat[data.testinds[fold]]
-        self.rte = 2 * (norm_minmax(self.rte.reshape(-1, 1)) - 0.5)
-        # develop set
-        if not params.post_process_mode:  # finding hyperparameters
-            self.xdev = data.explan_feat[data.devinds[fold], :]
-            self.ydev = data.output_label[data.devinds[fold]]
-            self.rdev = data.context_feat[data.devinds[fold]]
-            self.rdev = 2 * (norm_minmax(self.rdev.reshape(-1, 1)) - 0.5)
-
-        # train
-        xtr = self.xtr
-        ytr = self.ytr[:, None] if len(self.ytr.shape) == 1 else self.ytr  # one hot
-        rtr = self.rtr[:, None] if len(self.rtr.shape) == 1 else self.rtr
-        # test
-        xtest = self.xte
-        ytest = self.yte[:, None] if len(self.yte.shape) == 1 else self.yte
-        rtest = self.rte[:, None] if len(self.rte.shape) == 1 else self.rte
-        # develop
-        if not params.post_process_mode:  # finding hyperparameters
-            xdev = self.xdev
-            ydev = self.ydev[:, None] if len(self.ydev.shape) == 1 else self.ydev
-            rdev = self.rdev[:, None] if len(self.rdev.shape) == 1 else self.rdev
-
-            ytest = torch.empty_like(torch.tensor(rtest))
-
-        # Datasets
-        train_set = data_utils.TensorDataset(torch.tensor(xtr), torch.tensor(ytr), torch.tensor(rtr))
-        if not params.post_process_mode:  # finding hyperparameters
-            dev_set = data_utils.TensorDataset(torch.tensor(xdev), torch.tensor(ydev), torch.tensor(rdev))
-            test_set = data_utils.TensorDataset(torch.tensor(xtest), ytest, torch.tensor(rtest))
-        else:
-            test_set = data_utils.TensorDataset(torch.tensor(xtest), torch.tensor(ytest), torch.tensor(rtest))
-
-        # Dataloaders
-        self.train_dataloader = torch.utils.data.DataLoader(train_set, batch_size=params.batch_size, shuffle=True)
-        self.test_dataloader = torch.utils.data.DataLoader(test_set, batch_size=params.batch_size, shuffle=False)
-        if not params.post_process_mode:  # finding hyperparameters
-            self.dev_dataloader = torch.utils.data.DataLoader(dev_set, batch_size=params.batch_size, shuffle=True)
-
-    def get_Dataloaders(self, params):
-        if not params.post_process_mode:  # finding hyperparameters
-            return self.train_dataloader, self.dev_dataloader, self.test_dataloader
-        else:
-            return self.train_dataloader, self.test_dataloader
 
 
 

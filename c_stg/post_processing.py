@@ -1,8 +1,5 @@
 # Imports
-from flavors.data_params import data_origanization_params
-from flavors.utils import hyperparameters_chosen_extraction, init_optimizer, init_criterion
-from flavors.data_processing import DataProcessor, DataContainer
-from flavors.visual import visual_results
+from c_stg.data_processing import DataContainer
 from c_stg.params import Params_config
 import torch
 import c_stg.models
@@ -11,13 +8,18 @@ import numpy as np
 import torch.utils.data as data_utils
 import scipy.io as spio
 import random
+from c_stg.utils import import_per_data_type
 from sklearn.metrics import confusion_matrix
 
 
-def post_process_flow(directory_name, **kwargs):
+def post_process_flow(data_type, directory_name, cstg_args={}, data_args={}):
+    # Specific imports
+    (acc_score, set_seed, init_criterion, init_optimizer, DataProcessor, data_origanization_params, Data_params,
+     hyperparameters_chosen_extraction, visual_results) = \
+        (import_per_data_type(data_type))
 
     # Parameters
-    params = Params_config(**kwargs)
+    params = Params_config(data_type, cstg_kwargs=cstg_args, data_kwargs=data_args)
     params.post_process_mode = True  # flag for post-processing
     params.infer_directory = params.result_directory + directory_name
     params = data_origanization_params(params)
@@ -66,7 +68,7 @@ def post_process_flow(directory_name, **kwargs):
 
     acc_train_array, loss_train_array, acc_test_array, loss_test_array, uneffective_flag = \
         train(params, model, train_Dataloader, test_Dataloader, criterion, optimizer,
-              stg_regularizer, final_test=params.post_process_mode)
+              stg_regularizer, acc_score)
 
     model.eval()
     unique_r = np.unique(Container.rte)
@@ -110,19 +112,15 @@ def post_process_flow(directory_name, **kwargs):
     visual_results(params.infer_directory, mat_name, params)
 
 
-if __name__ == '__main__':
-    # name = ['2024_01_06_22_05_35_animal_4575_date_03_14_19_flavors',
-    #         '2024_01_06_23_15_21_animal_4575_date_03_19_19_flavors',
-    #         '2024_01_07_00_43_30_animal_4575_date_03_31_19_flavors',
-    #         '2024_01_07_01_43_37_animal_4575_date_04_03_19_flavors',
-    #         '2024_01_07_03_12_30_animal_4575_date_04_07_19_flavors',
-    #         '2024_01_07_04_40_12_animal_4575_date_04_11_19_flavors',
-    #         '2024_01_07_05_55_30_animal_4575_date_04_15_19_flavors']
-    # date = ['03_14_19', '03_19_19', '03_31_19', '04_03_19', '04_07_19', '04_11_19', '04_15_19']
-    name = ['2024_01_14_05_36_33_animal_4756_date_05_30_19_success',
-            '2024_01_14_06_43_24_animal_4756_date_06_11_19_success']
-    date = ['05_30_19', '06_11_19']
-    animal = ['4756', '4756']
-
-    for n, a, d in zip(name, animal, date):
-        post_process_flow(n, a, d)
+# if __name__ == '__main__':
+#     # name = ['2024_01_06_22_05_35_animal_4575_date_03_14_19_flavors',
+#     #         '2024_01_06_23_15_21_animal_4575_date_03_19_19_flavors',
+#     #         '2024_01_07_00_43_30_animal_4575_date_03_31_19_flavors',
+#     #         '2024_01_07_01_43_37_animal_4575_date_04_03_19_flavors',
+#     #         '2024_01_07_03_12_30_animal_4575_date_04_07_19_flavors',
+#     #         '2024_01_07_04_40_12_animal_4575_date_04_11_19_flavors',
+#     #         '2024_01_07_05_55_30_animal_4575_date_04_15_19_flavors']
+#     # date = ['03_14_19', '03_19_19', '03_31_19', '04_03_19', '04_07_19', '04_11_19', '04_15_19']
+#     name = '2024_01_20_23_54_03_animal_4458_date_01_22_19_success'
+#     arguments_dict = {'animal': '4458', 'date': '01_22_19'}
+#     post_process_flow(name, **arguments_dict)
