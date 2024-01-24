@@ -13,7 +13,7 @@ if create_data_bool % Loading the raw data
     
     chosen_animal = 1; % or 1
     disp("loading data")
-    datapath = 'data/';
+    datapath = '../data/';
     load(fullfile(datapath, animalsnames{chosen_animal}, 'data.mat'));
 else % Loading the processed data
     load('workspace.mat');
@@ -215,5 +215,6 @@ features = squeeze(CC_features);
 features = features ./ mean(features, 2);
 features_pca = (pca_cc_features * coeff(:, 1:30))';
 features_pca = features_pca ./ mean(features_pca, 2);
-
-save(fullfile(inputs_path, 'dataset'), 'y', 'features_pca', 'features');
+context = train_stage;
+save(fullfile(inputs_path, 'dataset'), 'y', 'features_pca', 'features',...
+    'context');

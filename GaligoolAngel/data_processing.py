@@ -23,20 +23,50 @@ class DataProcessor:
         self.output_label = self.data['y']
 
         # Partition
-        self.foldsnum = params.foldsnum
-        self.train_inds = []  # train batch
+        self.folds_num = params.folds_num
         self.test_inds = []  # test batch
+        self.rest_inds = []  # all the indices that are not test
+        self.split_rest_test()  # Splits the data into test and rest
+
+        self.train_inds = []  # train batch
         self.dev_inds = []  # validation batch
-        self.split_data_into_folds()
+        self.split_data_into_folds()  # splits the rest of the data into folds_num with train and dev
 
         # Extra Parameters
         self.start_time = params.start_time
         self.end_time = params.end_time
 
-    def split_data_into_folds(self, test_size=0.2):
+    def split_data_into_folds(self):
+        """
+        Splits the dev and train data into folds.
 
-        kf = KFold(n_splits=self.foldsnum)
-        self.train_inds, self.dev_inds = train_test_split(test_size=test_size, shuffle=True)
 
+        """
+        kf = KFold(n_splits=self.folds_num)
+
+        for train_index, dev_index in kf.split(self.explain_feat[self.rest_inds]):
+            self.train_inds.append(train_index)
+            self.dev_inds.append(dev_index)
+
+    def split_rest_test(self, train_size=0.8):
+        """
+        Splits the data into training and test sets after shuffling.
+        Changes the object test_inds and rest_inds properties
+
+        Parameters:
+        train_size (float): The fraction of the data to be used for training (between 0 and 1).
+        """
+        if not 0 <= train_size <= 1:
+            raise ValueError("Train size must be between 0 and 1")
+        data_size = len(self.explain_feat)  # The number of samples we have
+        indices = list(range(data_size))
+        random.shuffle(indices)
+
+        train_count = int(data_size * train_size)
+        train_indices = indices[:train_count]
+        test_indices = indices[train_count:]
+
+        self.test_inds = test_indices
+        self.rest_inds = train_indices
 
 
