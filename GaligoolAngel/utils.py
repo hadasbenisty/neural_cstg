@@ -1,5 +1,6 @@
 import numpy as np
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import mean_squared_error
 import os
 import torch
 import torch.nn as nn
@@ -7,7 +8,7 @@ import scipy.io as spio
 import random
 
 
-def acc_score(targets, prediction, params):  # TODO: Change to fit our code
+def acc_score(targets, prediction, params):
     if params.classification_flag and params.output_dim == 1:
         acc = accuracy_score(targets, np.int64((prediction.reshape((1, -1)) > 0.5).reshape(-1, 1)))
     elif params.classification_flag and params.output_dim > 2:
@@ -16,7 +17,7 @@ def acc_score(targets, prediction, params):  # TODO: Change to fit our code
         total_predictions = targets.size(0)
         acc = correct_predictions / total_predictions
     else:
-        raise ValueError("Not supported in this code version")
+        acc = mean_squared_error(targets, prediction.detach().numpy())
     return acc
 
 
@@ -32,11 +33,12 @@ def init_criterion():
 
 
 def init_optimizer(model, learning_rate):
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.999))
+    reg_strength=0 # need l2 regularization
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.999), weight_decay=reg_strength)
     return optimizer
 
 
-def hyperparameters_chosen_extraction(params):  # TODO: Change to fit our code
+def hyperparameters_chosen_extraction(params):
     # Extract the best hyperparameters
     best_acc_dev_folder = find_best_hyper_comb(params.infer_directory, key="nn_acc_dev")
     hyper_hidden_dim_idx = best_acc_dev_folder.find('hidden') + len('hidden') + 1
@@ -52,10 +54,10 @@ def hyperparameters_chosen_extraction(params):  # TODO: Change to fit our code
     return filename, hidden_dim, hyper_hidden_dim, learning_rate, stg_regularizer, hyperparameter_combination
 
 
-def find_best_hyper_comb(root_directory, key):  # TODO: change to fit our code
+def find_best_hyper_comb(root_directory, key):
 
     # Initialize variables to store the maximum mean and corresponding folder
-    max_mean = float('-inf')  # Negative infinity to ensure any mean value will be greater
+    min_mean = float('inf')  # Negative infinity to ensure any mean value will be greater
     best_folder = None
 
     # Iterate through each sub folder in the root directory
@@ -86,14 +88,14 @@ def find_best_hyper_comb(root_directory, key):  # TODO: change to fit our code
                 subfolder_mean = sum(nn_acc_dev_values) / len(nn_acc_dev_values)
 
                 # Update the maximum mean and corresponding folder if needed
-                if subfolder_mean > max_mean:
-                    max_mean = subfolder_mean
+                if subfolder_mean < min_mean:
+                    min_mean = subfolder_mean
                     best_folder = subfolder
 
     # Print the result
     if best_folder is not None:
         print(f"The subfolder with the highest mean {key} is: {best_folder}")
-        print(f"The maximum mean value is: {max_mean}")
+        print(f"The min mean value is: {min_mean}")
     else:
         print("No valid subfolders found.")
 
