@@ -11,7 +11,7 @@ if create_data_bool % Loading the raw data
     animalsnames = {'DT141' 'DT155'};
     animalsLabels = [0 1];
     
-    chosen_animal = 1; % or 1
+    chosen_animal = 2; % or 1
     disp("loading data")
     datapath = '../data/';
     load(fullfile(datapath, animalsnames{chosen_animal}, 'data.mat'));
@@ -37,13 +37,15 @@ CC_features = permute(CC_features, [1, 3, 2]);
 [~, estimated_level_CC] = naive_expert_svm_CC ...
         (CC_features, train_stage, training_labels_lut); 
 
-figure;
-imagesc(estimated_level_CC);
+fig_svm_cc = figure;
+plot(estimated_level_CC, 'DisplayName', 'Estimated Level');
+hold on;
+plot(avg_suc_rate, 'DisplayName', 'Average Sucess Rate');
 title(['The Estimated Expertee Along The Train Sessions for animal no.' ...
      , num2str(chosen_animal)])
-ylabel('Train Session')
+xlabel('Train Session #')
+legend;
 colormap('jet');
-colorbar;
 
 %% Trying PCA reduction
 
@@ -65,7 +67,7 @@ for ii = indices
 
 end
 
-figure;
+fig_pca = figure;
 imagesc(estimated_level_matrix_euclid);
 title(['The Estimated Expertee Along The Train Sessions for animal no.' ...
     , num2str(chosen_animal)])
@@ -91,7 +93,7 @@ for ii = indices
         (diffusion_map, train_stage, training_labels_lut); 
 end
 
-figure;
+fig_diffusion_map = figure;
 imagesc(estimated_level_matrix);
 title(['The Estimated Expertee Along The Train Sessions for animal no.' ...
     , num2str(chosen_animal)])
@@ -127,7 +129,7 @@ for train_stage_num = min(train_stage):max(train_stage)
     %     sflabels(train_stage==train_stage_num), 0.1, 100);
 end
 
-figure;
+fig_svm_sf = figure;
 plot(model_accuracy, 'DisplayName', "Model's Accuracy");
 hold on;
 plot(avg_suc_rate, 'DisplayName', "Average Sucess Rate");
@@ -139,7 +141,7 @@ hold off;
 
 %% 
 [model_accuracy, test_accuracy, SVMMOdel, test_data, validation_data] = ...
-    svm(CC_features', sflabels, 5, 0.2);
+    svm(squeeze(CC_features)', sflabels, 5, 0.2);
 
 predictions_sf = predict(SVMMOdel, test_data(:, 1:end-2));
 
@@ -154,7 +156,7 @@ for train = min(train_stage):max(train_stage)
     sucess_rate_sf(train) = max(rate, 1- rate);
 end
 
-figure;
+fig_svm_sf_each = figure;
 plot(sucess_rate_sf, 'DisplayName', "Model's Accuracy");
 hold on;
 plot(avg_suc_rate, 'DisplayName', "Average Sucess Rate");
@@ -187,7 +189,7 @@ for train = min(train_stage):max(train_stage)
 end
 
 % Plotting the result
-figure;
+fig_svm_Sf_last = figure;
 plot(sucess_rate_sf_last, 'DisplayName', "Model's Accuracy");
 hold on;
 plot(avg_suc_rate, "DisplayName", "Average Sucess Rate");
@@ -208,7 +210,7 @@ diffusion_map = calcDiffusionMap(aff_mat,...
     configParams, output_dim + 1); % Remove last param for default
 
 %% Saving Data
-load('data\paths\paths.mat');
+load('..\data\paths\paths.mat');
 y = squeeze(diffusion_map);
 y = y ./ mean(abs(y), 2);
 features = squeeze(CC_features);
@@ -218,3 +220,21 @@ features_pca = features_pca ./ mean(features_pca, 2);
 context = train_stage;
 save(fullfile(inputs_path, 'dataset'), 'y', 'features_pca', 'features',...
     'context');
+
+%% Saving Figure
+animal_num_str = num2str(chosen_animal);
+if ~isfolder(fullfile(results_path, animal_num_str))
+    mkdir(fullfile(results_path, animal_num_str));
+end
+saveas(fig_svm_cc, fullfile(results_path, animal_num_str, ...
+    'fig_svm_cc'), 'jpg');
+saveas(fig_pca, fullfile(results_path,animal_num_str, 'fig_pca'), 'jpg');
+saveas(fig_diffusion_map, fullfile(results_path, animal_num_str, ...
+    'fig_diffusion_map'), ...
+    'jpg');
+saveas(fig_svm_sf, fullfile(results_path, animal_num_str, ...
+    'fig_svm_sf'), 'jpg');
+saveas(fig_svm_sf_each, fullfile(results_path, animal_num_str, ...
+    'fig_svm_sf_each'), 'jpg');
+saveas(fig_svm_sf_last, fullfile(results_path, animal_num_str, ...
+    'fig_svm_sf_last'), 'jpg');
