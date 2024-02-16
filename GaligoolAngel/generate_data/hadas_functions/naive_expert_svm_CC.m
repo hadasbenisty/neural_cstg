@@ -70,13 +70,14 @@ naiveindex = 1;
 winstSec = 0;
 winendSec = 1;
 t = 0.5;
-chanceLevel = sum(train_stage==expertindex)/sum(train_stage==naiveindex|train_stage==expertindex);
+chanceLevel = sum(train_stage==expertindex)/ ...
+    sum(train_stage==naiveindex|train_stage==expertindex);
 chanceLevel=max(chanceLevel,1-chanceLevel);
 
 predictions = train_test_naive_expert_svm_sliding(data_all, t, winstSec, winendSec, 1, ...
     train_stage, naiveindex,  expertindex);
 labs = unique(train_stage);
-expertEstimation = nanmean(predictions==expertindex,3);
+expertEstimation = mean(predictions==expertindex,3);
 tmid = mean([winstSec;winendSec]) - params.tone;
 estimated_level = nan(length(labs), length(tmid));
 for ti=1:size(predictions,2)

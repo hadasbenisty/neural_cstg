@@ -1,10 +1,9 @@
 clear
-
-cd 'libsvm/matlab';
-make;
-cd ../../
-datapath = '../../../ProjectA\data';
-addpath(genpath("libsvm"))
+% 
+% cd 'libsvm/matlab';
+% make;
+datapath = '../data';
+% addpath(genpath("libsvm"))
 labelsCTRL = {'train_1' 'train_2' 'train_3' 'train_4' 'train_5' 'train_6' 'train_7'};
 labelsCNO = {'train_1' 'CNO_2' 'CNO_3' 'CNO_4' 'train_5' 'train_6' 'train_7'};
 addpath(genpath('.\'));
