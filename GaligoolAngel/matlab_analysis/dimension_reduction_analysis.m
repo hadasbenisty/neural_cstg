@@ -8,7 +8,7 @@ labelsCNO = {'train_1' 'CNO_2' 'CNO_3' 'CNO_4' ...
 animalsnames = {'DT141' 'DT155'};
 animalsLabels = [0 1];
 
-chosen_animal = 2; % or 1
+chosen_animal = 1; % or 1
 disp("loading data")
 datapath = '../data/';
 load(fullfile(datapath, animalsnames{chosen_animal}, 'data.mat'));
@@ -93,7 +93,7 @@ indices = 2:1:50;
 estimated_level_matrix = zeros([size(estimated_level_CC, 1), length(indices)]);
 chanceLevel_vector = zeros(length(indices));
 dR1 = calc_Rdist(CC);
-[aff_mat, ~] = CalcInitAff2D( dR1, 5 );
+[aff_mat, ~] = CalcInitAff2D( dR1, 5);
 configParams.maxInd = 5;
 for ii = indices
     diffusion_map = calcDiffusionMap(aff_mat,configParams, ii); % Remove last param for default
@@ -125,7 +125,6 @@ xlabel('First Diffusion Map Component')
 ylabel('Second Diffusion Map Component')
 zlabel('Third Diffusion Map Component')
 title('First 3 Components of the Diffusion Map On Our Correlation Data')
-
 
 
 %% SF Analysis
@@ -220,8 +219,11 @@ ylabel('Sucess Rate')
 hold off;
 
 %% TSNE Analysis
+tsne_dist_func = @(x, y) SpsdDist(vectorToSymMatrix(x), ...
+    vectorToSymMatrix(y), 5);
 normalized_cc = zscore(CC_features');
-Y = tsne(CC_features', 'NumDimensions', 3, 'Distance', 'correlation', ...
+Y = tsne(CC_features', 'NumDimensions', 3, 'Distance', ...
+    tsne_dist_func, ...
     'Exaggeration', length(unique(train_stage)));
 
 tsne_algo_fig = figure;
@@ -231,18 +233,18 @@ title('TSNE on our data (correlations)')
 
 
 %% Best Time Window Analysis
-partitions = 5;
-time_window = size(data_all, 2) ./ partitions; % only 20 percent of the time
-times = size(data_all,2) * linspace(1, partitions, partitions) ./ ...
-    partitions;
-estimated_level_CC_time_windows = [];
-for ii = 1:partitions
-    data_all_eff = data_all(:, times(ii):end, :);
-    CC = calcCorrelationMatrix(permute(data_all_eff, [2,1,3]));
-    CC_features_ext = permute( getLowerHalf(CC), [1, 3, 2]);
-    [~, estimated_level_CC_time_windows(ii)] = naive_expert_svm_CC ...
-        (CC_features_ext, train_stage, training_labels_lut); 
-end
+% partitions = 5;
+% time_window = size(data_all, 2) ./ partitions; % only 20 percent of the time
+% times = size(data_all,2) * linspace(1, partitions, partitions) ./ ...
+%     partitions;
+% estimated_level_CC_time_windows = [];
+% for ii = 1:partitions
+%     data_all_eff = data_all(:, times(ii):end, :);
+%     CC = calcCorrelationMatrix(permute(data_all_eff, [2,1,3]));
+%     CC_features_ext = permute( getLowerHalf(CC), [1, 3, 2]);
+%     [~, estimated_level_CC_time_windows(ii)] = naive_expert_svm_CC ...
+%         (CC_features_ext, train_stage, training_labels_lut); 
+% end
 
 %% Saving Figures
 animal_num_str = num2str(chosen_animal);
