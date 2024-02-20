@@ -1,11 +1,11 @@
 
 
 % A script to create a toy example for the stg model
-real_features_inputs = 2;
-fake_features_num = 8;
+real_features_inputs = 4;
+fake_features_num = 4;
 number_features_overall = real_features_inputs + fake_features_num;
-num_meas = 5000;
-SNR = 5;
+num_meas = 100;
+SNR = 20;
 is_order_context = true;
 num_of_contexts = 2;
 input_creation_handle = @createToyInput;

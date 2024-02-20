@@ -1,0 +1,65 @@
+% A Script to plot Best Results
+default_dir = 'C:\Users\hadas-stud-group2\Documents\GitHub\results';
+get_best = 1;
+%% Find Best Attempt
+[log_name, log_path] = uigetfile(default_dir, 'Choose Log File');
+log_full_path = fullfile(log_path, log_name);
+[minAcc, minParams] = findMinAccuracyAndParams(log_full_path);
+paramsStruct = buildParamsStruct(minParams);
+bestFolder = transformHyperparams(minParams);
+bestFolderPath = fullfile(log_path, bestFolder);
+
+%% Load Data
+if get_best
+    file_template = 'selfold';
+    last_fold = findLastFileInFolder(bestFolderPath, file_template);
+    dir_path = bestFolderPath;
+else
+    [res_file, dir_path] = uigetfile(default_dir, 'Choose Result Params');
+    res_full_path = [fullfile(dir_path, res_file)];
+    % Get all folds
+    pattern = '\d+'; % Regular expression 
+    % to match non-digit characters at the beginning of the string
+    match = regexp(res_file, pattern, 'match');
+    last_fold = str2double(match{1}); % Assuming
+    % there's at least one match, this is your 'smth'
+end
+best_fold = 1; best_fold_loss = inf;
+for fold_num = 0:last_fold
+    load(fullfile(dir_path, [file_template, num2str(fold_num), '.mat']));
+    if nn_acc_dev < best_fold_loss
+        best_fold = fold_num;
+        best_fold_loss = nn_acc_dev;
+    end
+    %% Plot stuff
+    mu_fig = figure('Visible', 'off');
+    bar(mu_vals);
+    title('Mu Values')
+    ylabel('Mu Weights')
+    xlabel('Weight Num #')
+    
+    loss_fig = figure('Visible', 'off');
+    plot(train_loss_array, 'DisplayName', 'Loss Train');
+    hold on;
+    plot(dev_loss_array, 'DisplayName', 'Loss Dev');
+    legend;
+    title('The loss along the epochs')
+    xlabel('Epoch Num #')
+    ylabel('Value')
+    
+    %% Save Figures
+    save_dir = fullfile(dir_path, 'matlab_plots', ['fold_', ...
+        num2str(fold_num)]);
+    if ~isfolder(save_dir)
+        mkdir(save_dir);
+    end
+    saveas(loss_fig, fullfile(save_dir, 'loss_fig'), 'png');
+    saveas(mu_fig, fullfile(save_dir, 'mu_fig'), 'png');
+end
+
+%% Change Best Name
+best_dir_old = fullfile(dir_path, 'matlab_plots', ['fold_', num2str(best_fold)]);
+best_dir_new = fullfile(dir_path, 'matlab_plots', ['fold_', num2str(best_fold), ...
+    '_best']); mkdir(best_dir_new);
+movefile(best_dir_old, best_dir_new);
+close all;

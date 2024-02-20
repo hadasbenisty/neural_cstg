@@ -11,7 +11,7 @@ function plotModelResults(y, predictions)
     title('Model vs. Predictions');
     xlabel('measurement no.')
     x = 1:size(predictions, 2);
-    predictions_plot = scatter(x, predictions, 10, 'filled');
+    predictions_plot = plot(x, predictions,'o');
     hold on;
     y_plot = scatter(x, y, 10, "filled");
     

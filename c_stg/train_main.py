@@ -41,12 +41,17 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
     params.input_dim = data.explan_feat.shape[-1]
     # input_dim = no. of contextual features
     params.param_dim = 1
-    #
-    num_labels = len(np.unique(np.array(data.output_label)))
-    if num_labels == 2:
-        params.output_dim = 1
+    if params.classification_flag:
+        num_labels = len(np.unique(np.array(data.output_label)))
+        if num_labels == 2:
+            params.output_dim = 1
+        else:
+            params.output_dim = num_labels
     else:
-        params.output_dim = num_labels
+        params.output_dim = data.output_label.shape[-1]
+
+
+
 
     if params.include_linear_model:
         for c_value in params.inverse_regularization:
@@ -140,7 +145,10 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                             inds = [i for i, x in enumerate(Container.rte == rval) if x]
                             x_test_tmp = Container.xte[inds, :]
                             r_test_tmp = Container.rte[inds].reshape(-1, 1)
-                            y_test_tmp = Container.yte[inds].reshape(-1, 1)
+                            if params.classification_flag:
+                                y_test_tmp = Container.yte[inds].reshape(-1, 1)
+                            else:
+                                y_test_tmp = Container.yte[inds]
                             # y_test_tmp = torch.empty_like(torch.tensor(r_test_tmp))
                             test_set_tmp = data_utils.TensorDataset(torch.tensor(x_test_tmp), torch.tensor(y_test_tmp),
                                                                     torch.tensor(r_test_tmp))
@@ -178,7 +186,7 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
 
     print("----Start post-processing---")
     name = params.res_directory.split("\\")[-1]
-    post_process_flow(data_type, name, cstg_args={}, data_args={})
+    post_process_flow(data_type, name, cstg_args=cstg_args, data_args=data_args)
     print("----FINISH----")
 
 

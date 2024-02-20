@@ -10,26 +10,33 @@ import random
 
 
 class DataProcessor:
-    def __init__(self, params, matfile_path):
+    def __init__(self, params):
         # ---- Description ----
         # The function intializes the dataprocessor object.
         # ---- Inputs ----
         # params - a params object.(the params class can be viewed in c_stg folder)
         # matfile_path - a string, contains the path to the data files with the relevant data.
-        self.data = spio.loadmat(matfile_path)
+        self.data = spio.loadmat(params.matfile_path)
         self.data_info = None  # Not relevant to us.
-        self.explain_feat = self.data['features']  # As built in the matlab code to sort the data
-        self.context_feat = self.data['context']
-        self.output_label = self.data['y']
+        self.explan_feat = (self.data['features']).T.astype(np.float32)  # As built in the matlab code to sort the data
+        self.context_feat = ((self.data['context']).astype(np.float32)).flatten()
+        self.output_label = (self.data['y']).T.astype(np.float32)
+        self.params = params
+        self.use_flag = True
 
         # Partition
         self.folds_num = params.folds_num
-        self.test_inds = []  # test batch
-        self.rest_inds = []  # all the indices that are not test
+        self.testinds = []  # test batch
+        self.restinds = []  # all the indices that are not test
         self.split_rest_test()  # Splits the data into test and rest
 
-        self.train_inds = []  # train batch
-        self.dev_inds = []  # validation batch
+        testinds_temp = [self.testinds]
+        for t in range(self.folds_num - 1):
+            testinds_temp.append(self.testinds)
+        self.testinds = testinds_temp
+
+        self.traininds = []  # train batch
+        self.devinds = []  # validation batch
         self.split_data_into_folds()  # splits the rest of the data into folds_num with train and dev
 
         # Extra Parameters
@@ -44,9 +51,9 @@ class DataProcessor:
         """
         kf = KFold(n_splits=self.folds_num)
 
-        for train_index, dev_index in kf.split(self.explain_feat[self.rest_inds]):
-            self.train_inds.append(train_index)
-            self.dev_inds.append(dev_index)
+        for train_index, dev_index in kf.split(self.explan_feat[self.restinds]):
+            self.traininds.append(train_index)
+            self.devinds.append(dev_index)
 
     def split_rest_test(self, train_size=0.8):
         """
@@ -58,7 +65,7 @@ class DataProcessor:
         """
         if not 0 <= train_size <= 1:
             raise ValueError("Train size must be between 0 and 1")
-        data_size = len(self.explain_feat)  # The number of samples we have
+        data_size = len(self.explan_feat)  # The number of samples we have
         indices = list(range(data_size))
         random.shuffle(indices)
 
@@ -66,7 +73,7 @@ class DataProcessor:
         train_indices = indices[:train_count]
         test_indices = indices[train_count:]
 
-        self.test_inds = test_indices
-        self.rest_inds = train_indices
+        self.testinds = test_indices
+        self.restinds = train_indices
 
 

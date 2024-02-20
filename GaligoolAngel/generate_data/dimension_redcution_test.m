@@ -11,7 +11,7 @@ if create_data_bool % Loading the raw data
     animalsnames = {'DT141' 'DT155'};
     animalsLabels = [0 1];
     
-    chosen_animal = 2; % or 1
+    chosen_animal = 1; % or 2
     disp("loading data")
     datapath = '../data/';
     load(fullfile(datapath, animalsnames{chosen_animal}, 'data.mat'));
@@ -27,6 +27,15 @@ training_lut = training_lut(1:last_train_session);
 
 %% Calculating the Correlation Matrix
 CC = calcCorrelationMatrix(permute(data_all(:, 240:end, :), [2,1,3]));
+% Taking the last 4 seconds of the data to process
+
+%% Calculating Average Sucess Rate
+avg_suc_rate = zeros(size(training_lut))';
+for session = 1:length(training_lut)
+    indicator = train_stage == session;
+    avg_suc_rate(session) = sum(sflabels(train_stage == session)) / ...
+        length(sflabels(train_stage == session));
+end
 
 %% Ttying SVM CC
 % CC_features = zeros(size(CC,2)^2, 1);
@@ -102,13 +111,7 @@ xlabel('The Number Of Dimensions Left')
 colormap('jet');
 colorbar;
 
-%% Calculating Average Sucess Rate
-avg_suc_rate = zeros(size(training_lut))';
-for session = 1:length(training_lut)
-    indicator = train_stage == session;
-    avg_suc_rate(session) = sum(sflabels(train_stage == session)) / ...
-        length(sflabels(train_stage == session));
-end
+
 
 
 %% SF SVM

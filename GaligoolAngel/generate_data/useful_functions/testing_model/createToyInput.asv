@@ -42,8 +42,7 @@ switch num_context
         % end
         X_all1 = [X_fake;X];
         X_all2 = [X; X_fake];
-        features(:, z == 1) = X_all1(:, z == 1);
-        features(:, z == 2) = X_all2(:, z == 2);
+        features(:, z == 1) = X_all1
         
     otherwise
         error('need to code this?')

@@ -9,15 +9,15 @@ import random
 
 
 def acc_score(targets, prediction, params):
-    if params.classification_flag and params.output_dim == 1:
+    if params.classification_flag == 'True' and params.output_dim == 1:
         acc = accuracy_score(targets, np.int64((prediction.reshape((1, -1)) > 0.5).reshape(-1, 1)))
-    elif params.classification_flag and params.output_dim > 2:
+    elif params.classification_flag == 'True' and params.output_dim > 2:
         _, predicted_labels = torch.max(prediction, 1)
         correct_predictions = (predicted_labels == targets.flatten()).sum().item()
         total_predictions = targets.size(0)
         acc = correct_predictions / total_predictions
     else:
-        acc = mean_squared_error(targets, prediction.detach().numpy())
+        acc = mean_squared_error(targets, prediction.reshape(targets.shape)) / np.var(targets)
     return acc
 
 
@@ -26,14 +26,14 @@ def get_subdirectories(directory):
     return subdirectories
 
 
-def init_criterion():
+def init_criterion(params):
     # For regression, using Mean Squared Error Loss
     criterion = nn.MSELoss()
     return criterion
 
 
 def init_optimizer(model, learning_rate):
-    reg_strength=0 # need l2 regularization
+    reg_strength = 0  # need l2 regularization
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.999), weight_decay=reg_strength)
     return optimizer
 
@@ -42,7 +42,8 @@ def hyperparameters_chosen_extraction(params):
     # Extract the best hyperparameters
     best_acc_dev_folder = find_best_hyper_comb(params.infer_directory, key="nn_acc_dev")
     hyper_hidden_dim_idx = best_acc_dev_folder.find('hidden') + len('hidden') + 1
-    hyper_hidden_dim = [int(best_acc_dev_folder[hyper_hidden_dim_idx:].split(']')[0])]
+    hyper_hidden_dim = [int(x) for x in
+                        [best_acc_dev_folder[hyper_hidden_dim_idx:].split(']')[0]][0].split(',')]
     hidden_dim = params.hidden_dims[0]  # only one option
     learning_rate_idx = best_acc_dev_folder.find('lr') + len('lr')
     learning_rate = float(best_acc_dev_folder[learning_rate_idx:].split('_')[0])
@@ -55,7 +56,6 @@ def hyperparameters_chosen_extraction(params):
 
 
 def find_best_hyper_comb(root_directory, key):
-
     # Initialize variables to store the maximum mean and corresponding folder
     min_mean = float('inf')  # Negative infinity to ensure any mean value will be greater
     best_folder = None
