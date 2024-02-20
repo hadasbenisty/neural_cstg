@@ -1,64 +1,54 @@
-%% Load data from before
-addpath(genpath('.\')); % Adding all the functions from the folders
-create_data_bool = 1; % Whether we want to build the data or
-% use the one we have
-if create_data_bool % Loading the raw data
-    labelsCTRL = {'train_1' 'train_2' 'train_3' 'train_4' ...
+% Data Organization
+%% Loading Data
+labelsCTRL = {'train_1' 'train_2' 'train_3' 'train_4' ...
         'train_5' 'train_6' 'train_7'};
-    labelsCNO = {'train_1' 'CNO_2' 'CNO_3' 'CNO_4' ...
+labelsCNO = {'train_1' 'CNO_2' 'CNO_3' 'CNO_4' ...
         'train_5' 'train_6' 'train_7'};
-    
-    animalsnames = {'DT141' 'DT155'};
-    animalsLabels = [0 1];
-    
-    chosen_animal = 1; % or 2
-    disp("loading data")
-    datapath = '../data/';
-    load(fullfile(datapath, animalsnames{chosen_animal}, 'data.mat'));
-else % Loading the processed data
-    load('workspace.mat');
-end
-%% Cutting the data in the 7th train session
+
+animalsnames = {'DT141' 'DT155'};
+animalsLabels = [0 1];
+
+chosen_animal = 2; % or 1
+disp("loading data")
+datapath = '../data/';
+load(fullfile(datapath, animalsnames{chosen_animal}, 'data.mat'));
+load('..\data\paths\paths.mat');
+%% PreProcessing
 last_train_session = 7;
 data_all = data_all(:,:, train_stage <= last_train_session);
 train_stage = train_stage(train_stage <= 7);
 sflabels = sflabels(train_stage <= 7);
 training_lut = training_lut(1:last_train_session);
-
-%% Calculating the Correlation Matrix
-CC = calcCorrelationMatrix(permute(data_all(:, 240:end, :), [2,1,3]));
-% Taking the last 4 seconds of the data to process
-
-%% Calculating Average Sucess Rate
+CC = calcCorrelationMatrix(permute(data_all(:, 240:end, :), [2,1,3])); % ...
+% Calculating the correlation matrix in the last 4 seconds of the
+% measurements.
 avg_suc_rate = zeros(size(training_lut))';
 for session = 1:length(training_lut)
     indicator = train_stage == session;
     avg_suc_rate(session) = sum(sflabels(train_stage == session)) / ...
         length(sflabels(train_stage == session));
+    avg_suc_rate(session) = max(avg_suc_rate(session), 1 - ...
+        avg_suc_rate(session));
 end
 
-%% Ttying SVM CC
-% CC_features = zeros(size(CC,2)^2, 1);
+%% CC Analysis
+% SVM All
 CC_features = getLowerHalf(CC);
-CC_features = permute(CC_features, [1, 3, 2]);
+CC_features_ext = permute(CC_features, [1, 3, 2]);
 
 
 [~, estimated_level_CC] = naive_expert_svm_CC ...
-        (CC_features, train_stage, training_labels_lut); 
+        (CC_features_ext, train_stage, training_labels_lut); 
 
 fig_svm_cc = figure;
-plot(estimated_level_CC, 'DisplayName', 'Estimated Level');
-hold on;
-plot(avg_suc_rate, 'DisplayName', 'Average Sucess Rate');
+errorbar(estimated_level_CC, 'DisplayName', 'Estimated Level');
 title(['The Estimated Expertee Along The Train Sessions for animal no.' ...
      , num2str(chosen_animal)])
 xlabel('Train Session #')
 legend;
 
-
-%% Trying PCA reduction
-
-pca_cc_features = squeeze(CC_features)';
+% PCA Dim Analysis
+pca_cc_features = CC_features';
 [coeff, score, latent, tsquared, explained, mu] = ...
     pca(pca_cc_features);
 
@@ -85,7 +75,20 @@ xlabel('The Number Of Dimensions Left')
 colormap('jet')
 colorbar;
 
-%% Choosing the right number of dimensions reduction
+% PCA 3D Reduction
+coeffs_3d = coeff(:, 1:3)';
+PCA_lower_dims = pca_cc_features * coeffs_3d';
+
+pca_3d_figure = figure;
+cmap = hsv(max(train_stage)); colors = cmap(train_stage, :);
+scatter3(PCA_lower_dims(:, 1), PCA_lower_dims(:, 2), PCA_lower_dims(:,3) ...
+    ,16 ,colors, 'filled');
+xlabel('First PCA Component')
+ylabel('Second PCA Component')
+zlabel('Third PCA Component')
+title('First 3 Components of the PCA On Our Correlation Data')
+
+% Dimension Reduction Map Diffusion
 indices = 2:1:50;
 estimated_level_matrix = zeros([size(estimated_level_CC, 1), length(indices)]);
 chanceLevel_vector = zeros(length(indices));
@@ -111,38 +114,46 @@ xlabel('The Number Of Dimensions Left')
 colormap('jet');
 colorbar;
 
+% Diffusion Map 3D reduction
+configParams.maxInd = 5;
+diffusion_map = (calcDiffusionMap(aff_mat,configParams, 4))';
+diffusion_map_3d_fig = figure;
+cmap = hsv(max(train_stage)); colors = cmap(train_stage, :);
+scatter3(diffusion_map(:, 1), diffusion_map(:, 2),diffusion_map(:,3) ...
+    ,16 ,colors, 'filled');
+xlabel('First Diffusion Map Component')
+ylabel('Second Diffusion Map Component')
+zlabel('Third Diffusion Map Component')
+title('First 3 Components of the Diffusion Map On Our Correlation Data')
 
 
 
-%% SF SVM
+%% SF Analysis
+if size(avg_suc_rate, 1) ~= 1
+    avg_suc_rate = avg_suc_rate';
+end
+% SF Each
 sf_lut = {'fail','suc'};
-estimated_level_sf = zeros(length(sf_lut), length(training_lut));
 model_accuracy = zeros(size(training_lut));
 CC_features_squeezed = squeeze(CC_features)';
 for train_stage_num = min(train_stage):max(train_stage)
-    % [chance_level_sf, estimated_level_sf(:, train_stage_num)] = ...
-    %     naive_expert_svm_CC(...
-    %     CC_features(:, :, train_stage==train_stage_num), ...
-    %     sflabels(train_stage==train_stage_num)+1, sf_lut);
     model_accuracy(train_stage_num) = svm( ...
         CC_features_squeezed(train_stage==train_stage_num, :), ...
-        sflabels(train_stage==train_stage_num), 5, 1);
-    % model_BT_accuracy(train_stage_num) = baggedTreesModel(...
-    %     CC_features_squeezed(train_stage==train_stage_num, :), ...
-    %     sflabels(train_stage==train_stage_num), 0.1, 100);
+        sflabels(train_stage==train_stage_num), 3, 1);
 end
 
-fig_svm_sf = figure;
-plot(model_accuracy, 'DisplayName', "Model's Accuracy");
+fig_svm_sf_each = figure;
+plot(model_accuracy - avg_suc_rate, 'DisplayName', "Model's Accuracy -" + ...
+    " average sucess rate");
 hold on;
-plot(avg_suc_rate, 'DisplayName', "Average Sucess Rate");
+% plot(avg_suc_rate, 'DisplayName', "Average Sucess Rate");
 legend;
-title('The SVM prediction sucess rate over training sessions')
+title('The SVM prediction sucess rate trained on each session')
 xlabel('Train Stage')
 ylabel('Precentage Rate');
 hold off;
 
-%% 
+% SF All
 [model_accuracy, test_accuracy, SVMMOdel, test_data, validation_data] = ...
     svm(squeeze(CC_features)', sflabels, 5, 0.2);
 
@@ -159,32 +170,35 @@ for train = min(train_stage):max(train_stage)
     sucess_rate_sf(train) = max(rate, 1- rate);
 end
 
-fig_svm_sf_each = figure;
-plot(sucess_rate_sf, 'DisplayName', "Model's Accuracy");
+fig_svm_sf_all = figure;
+plot(sucess_rate_sf - avg_suc_rate, 'DisplayName', "Model's Accuracy" + ...
+    " - avg sucess rate");
 hold on;
-plot(avg_suc_rate, 'DisplayName', "Average Sucess Rate");
+% plot(avg_suc_rate, 'DisplayName', "Average Sucess Rate");
 legend;
-title('Sucess rate of svm over train sessions (cross validation score)');
+title(['Sucess rate of svm over train sessions (cross validation score)', ...
+    'animal no.', num2str(chosen_animal)]);
 xlabel('Train Session')
 ylabel('Sucess Rate')
 hold off;
 
-%% Training a model on the last train session and testing on all the others
+% SF Last
 CC_features = squeeze(CC_features);
 train_stage_num = max(train_stage);
 [model_accuracy_last, test_accuracy_last, SVMMOdel_last, ...
     test_data_last, validation_data] = ...
     svm(CC_features(train_stage(1:end-1)==train_stage_num, :), ...
-        sflabels(train_stage(1:end-1)==train_stage_num), 5, 1);
+        sflabels(train_stage(1:end-1)==train_stage_num), 5, 0.4);
 
+sucess_rate_sf_last = [];
 for train = min(train_stage):max(train_stage)
     predictions_sf_last = predict(SVMMOdel_last, CC_features(...
         train_stage(1:end-1) == train, :));
     [TP, TN, FP, FN] = calculateConfusionMatrixElements(...
-        predictions_sf_last(train_stage(test_data_last(:,end)) == train), ...
+        predictions_sf_last, ...
         sflabels(train_stage(test_data_last(:,end)) == train));
     rate = calculateAccuracy(TP, TN, FP, FN);
-    sucess_rate_sf_last(train) = max(rate, 1 - rate);
+    sucess_rate_sf_last = [sucess_rate_sf_last, max(rate, 1 - rate)];
     % sucess_rate_sf(train) = performCrossValidation( ...
     %     CC_features(:, train_stage == train), ...
     %     sflabels(train_stage == train), 5, SVMMOdel_last);
@@ -192,39 +206,45 @@ for train = min(train_stage):max(train_stage)
 end
 
 % Plotting the result
-fig_svm_Sf_last = figure;
-plot(sucess_rate_sf_last, 'DisplayName', "Model's Accuracy");
+fig_svm_sf_last = figure;
+plot(sucess_rate_sf_last - avg_suc_rate, 'DisplayName', ...
+    "Model's Accuracy - Average Sucess Rate");
 hold on;
-plot(avg_suc_rate, "DisplayName", "Average Sucess Rate");
+% plot(avg_suc_rate, "DisplayName", "Average Sucess Rate");
 legend;
 title(['The sucess rate of an SVM model trained on the last session' ...
     ' on the ' ...
-    'other sessions'])
+    'other sessions animal no.', num2str(chosen_animal)]);
 xlabel('Train Session')
 ylabel('Sucess Rate')
 hold off;
 
-%% Calculating Y 
-output_dim = 2;
-dR1 = calc_Rdist(CC);
-[ aff_mat,sigma ] = CalcInitAff2D( dR1, 5 );
-configParams.maxInd = 5;
-diffusion_map = calcDiffusionMap(aff_mat,...
-    configParams, output_dim + 1); % Remove last param for default
+%% TSNE Analysis
+normalized_cc = zscore(CC_features');
+Y = tsne(CC_features', 'NumDimensions', 3, 'Distance', 'correlation', ...
+    'Exaggeration', length(unique(train_stage)));
 
-%% Saving Data
-load('..\data\paths\paths.mat');
-y = squeeze(diffusion_map);
-y = y ./ mean(abs(y), 2);
-features = squeeze(CC_features);
-features = features ./ mean(features, 2);
-features_pca = (pca_cc_features * coeff(:, 1:30))';
-features_pca = features_pca ./ mean(features_pca, 2);
-context = train_stage;
-save(fullfile(inputs_path, 'dataset'), 'y', 'features_pca', 'features',...
-    'context');
+tsne_algo_fig = figure;
+cmap = hsv(max(train_stage)); colors = cmap(train_stage, :);
+scatter3(Y(:,1), Y(:,2), Y(:,3), 16, colors, "filled");
+title('TSNE on our data (correlations)')
 
-%% Saving Figure
+
+%% Best Time Window Analysis
+partitions = 5;
+time_window = size(data_all, 2) ./ partitions; % only 20 percent of the time
+times = size(data_all,2) * linspace(1, partitions, partitions) ./ ...
+    partitions;
+estimated_level_CC_time_windows = [];
+for ii = 1:partitions
+    data_all_eff = data_all(:, times(ii):end, :);
+    CC = calcCorrelationMatrix(permute(data_all_eff, [2,1,3]));
+    CC_features_ext = permute( getLowerHalf(CC), [1, 3, 2]);
+    [~, estimated_level_CC_time_windows(ii)] = naive_expert_svm_CC ...
+        (CC_features_ext, train_stage, training_labels_lut); 
+end
+
+%% Saving Figures
 animal_num_str = num2str(chosen_animal);
 if ~isfolder(fullfile(results_path, animal_num_str))
     mkdir(fullfile(results_path, animal_num_str));
@@ -241,3 +261,9 @@ saveas(fig_svm_sf_each, fullfile(results_path, animal_num_str, ...
     'fig_svm_sf_each'), 'jpg');
 saveas(fig_svm_sf_last, fullfile(results_path, animal_num_str, ...
     'fig_svm_sf_last'), 'jpg');
+saveas(pca_3d_figure, fullfile(results_path, animal_num_str, ...
+    'fig_PCA_3d_CC'), 'jpg');
+saveas(diffusion_map_3d_fig,  fullfile(results_path, animal_num_str, ...
+    'fig_diffusion_map_3d_CC'), 'jpg');
+saveas(tsne_algo_fig,  fullfile(results_path, animal_num_str, ...
+    'tsne_3d_CC'), 'jpg');
