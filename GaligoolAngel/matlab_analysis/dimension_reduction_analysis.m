@@ -19,7 +19,7 @@ data_all = data_all(:,:, train_stage <= last_train_session);
 train_stage = train_stage(train_stage <= 7);
 sflabels = sflabels(train_stage <= 7);
 training_lut = training_lut(1:last_train_session);
-CC = calcCorrelationMatrix(permute(data_all(:, 240:end, :), [2,1,3])); % ...
+CC = calcCorrelationMatrix(permute(data_all(:, 20:end, :), [2,1,3])); % ...
 % Calculating the correlation matrix in the last 4 seconds of the
 % measurements.
 avg_suc_rate = zeros(size(training_lut))';
@@ -115,8 +115,8 @@ colormap('jet');
 colorbar;
 
 % Diffusion Map 3D reduction
-configParams.maxInd = 5;
-diffusion_map = (calcDiffusionMap(aff_mat,configParams, 4))';
+configParams.maxInd = 20;
+diffusion_map = (calcDiffusionMap(aff_mat,configParams, 20))';
 diffusion_map_3d_fig = figure;
 cmap = hsv(max(train_stage)); colors = cmap(train_stage, :);
 scatter3(diffusion_map(:, 1), diffusion_map(:, 2),diffusion_map(:,3) ...
