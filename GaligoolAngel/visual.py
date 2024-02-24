@@ -60,7 +60,7 @@ def visual_results(path, mat_name, params):
 
     mus_vec_r = []
     for i in np.linspace(0, len(mu_vals)-1, len(mu_vals)).astype(int):
-        mus_vec_r.append(mus[i])
+        mus_vec_r.append(mu_vals[i])
 
     fig, axs = plt.subplots(mu_vals.shape[1])
     for ii in np.linspace(0, mu_vals.shape[1] - 1, mu_vals.shape[1]).astype(int):

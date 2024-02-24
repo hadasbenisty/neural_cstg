@@ -152,7 +152,8 @@ zlabel('Third Diffusion Map Component')
 title('First 3 Components of the Diffusion Map On Our Correlation Data')
 
 
-
+=======
+>>>>>>> Stashed changes
 %% SF Analysis
 if size(avg_suc_rate, 1) ~= 1
     avg_suc_rate = avg_suc_rate';

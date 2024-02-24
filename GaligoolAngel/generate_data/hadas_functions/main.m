@@ -31,13 +31,13 @@ trajectories_analysis_sf(data_all, sflabels, train_stage, training_labels_lut);
 disp("Riemannian centroids")
 [mC, CC] = calc_centroids(data_all, train_stage);
 dR1 = calc_Rdist(CC);
-[ aff_mat,sigma ] = CalcInitAff2D( dR1, 5);
+[aff_mat, sigma] = CalcInitAff2D( dR1, 5);
 configParams.maxInd = 5;
 configParams.plotResults = 1;
-diffusion_map = calcDiffusionMap(aff_mat,configParams); 
+diffusion_map_main = calcDiffusionMap(aff_mat,configParams); 
 % Remove last param for default
-figure;scatter3(diffusion_map(1, :), diffusion_map(2, :), ...
-    diffusion_map(3, :), 10, train_stage, 'filled');
+figure;scatter3(diffusion_map_main(1, :), diffusion_map_main(2, :), ...
+    diffusion_map_main(3, :), 10, train_stage, 'filled');
 colormap jet;
 title(['Correlation matrices embedded by Diffusion Map,' ...
     ' Colors - Training Session'])

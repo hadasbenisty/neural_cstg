@@ -1,6 +1,8 @@
 function [y, features, N, context] = ...
     createToyInput(...
-    real_features_inputs, num_meas, SNR, number_features_overall, num_context, is_order_context)
+    real_features_inputs, num_meas, ...
+    SNR, number_features_overall, num_context, is_order_context, ...
+    is_extreme_context)
 
 
 % Create X and real Y
@@ -30,12 +32,17 @@ switch num_context
         z = rand(num_meas ,1);
         if is_order_context
             z = sort(z);
-        end
-        for context = 1:num_context
-            z_fake(z >= (context - 1) / num_context) = context; % When itirating
+            for context = 1:num_context
+                z_fake(z >= (context - 1) / num_context) = context; % When itirating
             % will delete the wrong ones.
+            end
+            z = z_fake;
+        elseif is_extreme_context
+                z(X(1, :) > 0) = 1;
+                z(X(1, :) <= 0) = 0;
         end
-        z = z_fake;
+        
+        
         % for context = 1:num_context
         %     X_all(:, :, context) = [X_fake; X];
         %     features(:, z == context) = X_all(:, z == context, context);

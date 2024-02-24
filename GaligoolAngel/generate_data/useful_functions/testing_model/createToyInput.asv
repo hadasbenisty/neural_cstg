@@ -30,7 +30,10 @@ switch num_context
         z = rand(num_meas ,1);
         if is_order_context
             z = sort(z);
-        end
+        else if is_extreme_context
+                z(X(:,1) > 0) = ones(size(X(:,1)));
+                z((X:,1) <= 0 ) = 2*ones()
+
         for context = 1:num_context
             z_fake(z >= (context - 1) / num_context) = context; % When itirating
             % will delete the wrong ones.
@@ -42,7 +45,8 @@ switch num_context
         % end
         X_all1 = [X_fake;X];
         X_all2 = [X; X_fake];
-        features(:, z == 1) = X_all1
+        features(:, z == 1) = X_all1(:, z == 1);
+        features(:, z == 2) = X_all2(:, z == 2);
         
     otherwise
         error('need to code this?')
