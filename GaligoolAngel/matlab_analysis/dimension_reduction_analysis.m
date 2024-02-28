@@ -32,6 +32,41 @@ for session = 1:length(training_lut)
         avg_suc_rate(session));
 end
 
+%% PLotting the CC
+% Define the figure
+h = figure;
+
+% Define parameters for the sine wave and the GIF
+filename = fullfile(results_path, animal_num_str, 'correlations.gif'); % Name of the GIF file
+nFrames = 24; % Number of frames in the GIF
+jump = floor(size(CC, 3) ./ nFrames);
+
+% Loop over frames
+for n = 1:jump:size(CC,3)
+    
+    
+    % Plot the sine wave
+    imagesc(CC(:, :, n))
+    colormap('jet');
+    
+    % Capture the plot as an image
+    frame = getframe(h);
+    im = frame2im(frame);
+    [imind, cm] = rgb2ind(im, 256);
+    
+    % Write to the GIF File
+    if n == 1
+        imwrite(imind, cm, filename, 'gif', 'Loopcount', inf);
+    else
+        imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append');
+    end
+    
+    % Pause briefly to simulate animation speed
+    pause(0.1);
+end
+
+% Close the figure
+close(h);
 %% CC Analysis
 CC_features = getLowerHalf(CC);
 
@@ -83,15 +118,22 @@ diff_map_feat_ext = permute(diffusion_map', [1 3 2]);
         (diff_map_feat_ext, train_stage, training_labels_lut); 
 
 fig_svm_cc = figure;
-plot(estimated_level_CC, 'DisplayName', 'Estimated Level');
+plot(estimated_level_CC_all, 'DisplayName', 'Correaltion Matrix');
+hold on;
+plot(estimated_level_CC_diff_map, 'DisplayName', ...
+    'Diffusion Map');
+hold on;
+plot(estimated_level_CC_pca, 'DisplayName', ...
+    'PCA')
 title(['The Estimated Expertee Along The Train Sessions for animal no.' ...
      , num2str(chosen_animal)])
 xlabel('Train Session #')
 legend;
 
+
 % PCA Dim Analysis
 indices = 2:1:50;
-estimated_level_matrix_euclid = zeros([size(estimated_level_CC, 1), ...
+estimated_level_matrix_euclid = zeros([size(estimated_level_CC_all, 1), ...
     length(indices)]);
 for ii = indices
     lower_dim_vecs = coeff(:, 1:ii)';
@@ -115,7 +157,7 @@ colorbar;
 
 % Dimension Reduction Map Diffusion
 indices = 2:1:50;
-estimated_level_matrix = zeros([size(estimated_level_CC, 1), length(indices)]);
+estimated_level_matrix = zeros([size(estimated_level_CC_all, 1), length(indices)]);
 chanceLevel_vector = zeros(length(indices));
 configParams.maxInd = 5;
 configParams.plotResults = 0;
@@ -189,34 +231,21 @@ for train_stage_num = min(train_stage):max(train_stage)
 end
 % Create a figure and save its handle
 fig_svm_sf_each = figure;
-label = "Model's Accuracy - average success rate";
+y1 = "Model's Accuracy - average success rate";
 xl = 'Train Stage';
-yl = 'Scuess Rate';
-% First subplot
-axes_sf_each(1) = subplot(3, 1, 1);
-plot(model_accuracy_sf_each - avg_suc_rate, 'DisplayName', label);
+plot(model_accuracy_sf_each - avg_suc_rate, 'DisplayName', 'CC Matrix');
+hold on;
+plot(model_accuracy_pca_sf_each - avg_suc_rate, 'DisplayName', ...
+    'PCA 3D'); 
+hold on;
+plot(model_accuracy_diff_map_sf_each - avg_suc_rate, 'DisplayName', ...
+    'Diffusion Map 3D');
 legend;
 title('The SVM prediction success rate trained on each session');
 xlabel(xl);
 ylabel(yl);
 
-% Second subplot (Example)
-axes_sf_each(2) = subplot(3, 1, 2);
-% Assuming 'data2' and 'data2_label' for the second plot
-plot(model_accuracy_pca_sf_each - avg_suc_rate, 'DisplayName', label); 
-legend;
-title("Using PCA's first 3 components");
-xlabel(xl);
-ylabel(yl);
 
-% Third subplot (Example)
-axes_sf_each(3) = subplot(3, 1, 3);
-% Assuming 'data3' and 'data3_label' for the third plot
-plot(model_accuracy_diff_map_sf_each - avg_suc_rate, 'DisplayName', label);
-legend;
-title('Using Diffusion Map first 3 components');
-xlabel(xl);
-ylabel(yl);
 
 
 % SF All
@@ -272,37 +301,24 @@ end
 fig_svm_sf_all = figure;
 label = "Model's Accuracy - average success rate";
 xl = 'Train Stage';
-yl = 'Scuess Rate';
-
-% First subplot
-axes_sf_all(1) = subplot(3,1,1);
-plot(sucess_rate_sf - avg_suc_rate, 'DisplayName', "Model's Accuracy" + ...
-    " - avg sucess rate");
+yl = "Model's Accuracy" + ...
+    " - avg sucess rate";
+plot(sucess_rate_sf - avg_suc_rate, 'DisplayName', 'CC Matrix');
 hold on;
-% plot(avg_suc_rate, 'DisplayName', "Average Sucess Rate");
+plot(sucess_rate_sf_all_PCA - avg_suc_rate, 'DisplayName', 'PCA 3D');
+hold on;
+plot(sucess_rate_sf_all_diff_map - avg_suc_rate, 'DisplayName', ...
+    'Diffusion Map 3D');
 legend;
 title(['Sucess rate of svm trained on all of the sessions', ...
     'animal no.', num2str(chosen_animal)]);
 xlabel('Train Session')
 ylabel('Sucess Rate')
 hold off;
-% Second subplot (Example)
-axes_sf_all(2) = subplot(3, 1, 2);
-% Assuming 'data2' and 'data2_label' for the second plot
-plot(sucess_rate_sf_all_PCA - avg_suc_rate, 'DisplayName', label); 
-legend;
-title("Using PCA's first 3 components");
-xlabel(xl);
-ylabel(yl);
 
-% Third subplot (Example)
-axes_sf_all(3) = subplot(3, 1, 3);
-% Assuming 'data3' and 'data3_label' for the third plot
-plot(sucess_rate_sf_all_diff_map - avg_suc_rate, 'DisplayName', label);
-legend;
-title('Using Diffusion Map first 3 components');
-xlabel(xl);
-ylabel(yl);
+
+
+
 
 % SF Last
 CC_features = squeeze(CC_features);

@@ -6,7 +6,9 @@ function [y, features, N, context] = ...
 
 
 % Create X and real Y
-X = randn([real_features_inputs, num_meas]);
+for x_i = 1:real_features_inputs
+    X(x_i, :) = randn(1, num_meas);
+end
 [Y, ~] = createRandomLinearTransformation(X);
 % If it is context dependant we need different y's for each context.
 
@@ -37,9 +39,10 @@ switch num_context
             % will delete the wrong ones.
             end
             z = z_fake;
-        elseif is_extreme_context
-                z(X(1, :) > 0) = 1;
-                z(X(1, :) <= 0) = 0;
+        end
+        if is_extreme_context
+                X(:, z == 1) = X(:, z == 1) - max(X(:, z == 1)*2);
+                X(:, z == 2) = X(:, z== 2) + min(X(:, z== 2)*2);
         end
         
         
