@@ -28,8 +28,6 @@ for session = 1:length(training_lut)
     indicator = train_stage == session;
     avg_suc_rate(session) = sum(sflabels(train_stage == session)) / ...
         length(sflabels(train_stage == session));
-    avg_suc_rate(session) = max(avg_suc_rate(session), 1 - ...
-        avg_suc_rate(session));
 end
 
 %% PLotting the CC
@@ -37,7 +35,7 @@ end
 h = figure;
 
 % Define parameters for the sine wave and the GIF
-filename = fullfile(results_path, animal_num_str, 'correlations.gif'); % Name of the GIF file
+filename = fullfile(results_path, num2str(chosen_animal), 'correlations.gif'); % Name of the GIF file
 nFrames = 24; % Number of frames in the GIF
 jump = floor(size(CC, 3) ./ nFrames);
 
@@ -205,9 +203,9 @@ sf_lut = {'fail','suc'};
 model_accuracy_sf_each = zeros(size(training_lut));
 CC_features_squeezed = squeeze(CC_features)';
 for train_stage_num = min(train_stage):max(train_stage)
-    model_accuracy_sf_each(train_stage_num) = svm( ...
+    model_accuracy_sf_each(train_stage_num) = trainSvm( ...
         CC_features_squeezed(train_stage==train_stage_num, :), ...
-        sflabels(train_stage==train_stage_num), 3, 1);
+        sflabels(train_stage==train_stage_num), 5, 0.2);
 end
 
 % PCA
@@ -215,9 +213,9 @@ sf_lut = {'fail','suc'};
 model_accuracy_pca_sf_each = zeros(size(training_lut));
 CC_features_squeezed = squeeze(CC_features)';
 for train_stage_num = min(train_stage):max(train_stage)
-    model_accuracy_pca_sf_each(train_stage_num) = svm( ...
+    model_accuracy_pca_sf_each(train_stage_num) = trainSVM( ...
         PCA_lower_dims(train_stage==train_stage_num, :), ...
-        sflabels(train_stage==train_stage_num), 3, 1);
+        sflabels(train_stage==train_stage_num), 5, 0.2);
 end
 
 % Diffusion Map
@@ -225,9 +223,9 @@ sf_lut = {'fail','suc'};
 model_accuracy_diff_map_sf_each = zeros(size(training_lut));
 CC_features_squeezed = squeeze(CC_features)';
 for train_stage_num = min(train_stage):max(train_stage)
-    model_accuracy_diff_map_sf_each(train_stage_num) = svm( ...
+    model_accuracy_diff_map_sf_each(train_stage_num) = trainSVM( ...
         diffusion_map(train_stage==train_stage_num, :), ...
-        sflabels(train_stage==train_stage_num), 3, 1);
+        sflabels(train_stage==train_stage_num), 5, 0.2);
 end
 % Create a figure and save its handle
 fig_svm_sf_each = figure;
@@ -406,3 +404,7 @@ saveas(diffusion_map_3d_fig,  fullfile(results_path, animal_num_str, ...
     'fig_diffusion_map_3d_CC'), 'jpg');
 saveas(tsne_algo_fig,  fullfile(results_path, animal_num_str, ...
     'tsne_3d_CC'), 'jpg');
+
+%% Saving Results
+save(fullfile(inputs_path, "diffusion_map_analysis.mat"), ...
+    'diffusion_map', 'avg_suc_rate', 'sflabels', 'train_stage');
