@@ -240,8 +240,8 @@ plot(model_accuracy_diff_map_sf_each - avg_suc_rate, 'DisplayName', ...
     'Diffusion Map 3D');
 legend;
 title('The SVM prediction success rate trained on each session');
-xlabel(xl);
-ylabel(yl);
+xlabel(x1);
+ylabel(y1);
 
 
 
@@ -410,4 +410,6 @@ smoothed_to_python = save_data_for_cstg(CC_features,train_stage,diffusion_map(:,
 %% Saving Results
 save(fullfile(inputs_path, "diffusion_map_analysis.mat"), ...
     'diffusion_map', 'avg_suc_rate', 'sflabels', 'train_stage');
-save(fullfile(inputs_path, "diffusion_dimension_analysis.mat"));
+save(fullfile(inputs_path, "diffusion_dimension_analysis.mat"), ...
+    'diffusion_map', 'sflabels', 'train_stage', 'pca_cc_features', ...
+    'CC_features_squeezed');
