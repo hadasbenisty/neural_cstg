@@ -17,7 +17,7 @@ def acc_score(targets, prediction, params):
         total_predictions = targets.size(0)
         acc = correct_predictions / total_predictions
     else:
-        acc = mean_squared_error(targets, prediction.reshape(targets.shape)) / np.var(targets)
+        acc = mean_squared_error(targets, prediction.reshape(targets.shape)) / 1 # Todo fix np.var(targets)
     return acc
 
 
@@ -101,6 +101,57 @@ def find_best_hyper_comb(root_directory, key):
 
     return best_folder
 
+#optional if we ever want to check the best hyper comb for seperation and not accuracy
+def find_best_hyper_comb_seperation(root_directory, key):
+    # Initialize variables to store the maximum mean and corresponding folder
+    min_mean = float('inf')  # Negative infinity to ensure any mean value will be greater
+    best_folder = None
+
+    # Iterate through each sub folder in the root directory
+    for subfolder in os.listdir(root_directory):
+        subfolder_path = os.path.join(root_directory, subfolder)
+
+        # Check if the current item in the directory is a subfolder
+        if os.path.isdir(subfolder_path):
+            # Initialize a list to store nn_acc_dev values for the current subfolder
+            mu_lists = []
+
+            # Iterate through each mat file in the subfolder
+            for mat_file in os.listdir(subfolder_path):
+                if mat_file.endswith('.mat'):
+                    mat_file_path = os.path.join(subfolder_path, mat_file)
+
+                    # Load the mat file and get the nn_acc_dev property
+                    mat_data = spio.loadmat(mat_file_path)
+                    mu_vals = mat_data.get(key, None)  # return None if the key is not found
+
+                    # Check if nn_acc_dev property exists
+                    if mu_vals is not None:
+                        # Append the mean value to the list
+                        mu_lists.append(mu_vals)
+
+            # Calculate the mean of nn_acc_dev values for the current subfolder
+            if mu_lists:
+                subfolder_mean = sum(mu_lists) / len(mu_lists)
+
+                # Update the maximum mean and corresponding folder if needed
+                if seperation_score(subfolder_mean) < min_mean:
+                    min_mean = seperation_score(subfolder_mean)
+                    best_folder = subfolder
+
+    # Print the result
+    if best_folder is not None:
+        print(f"The subfolder with the highest mean {key} is: {best_folder}")
+        print(f"The min mean value is: {min_mean}")
+    else:
+        print("No valid subfolders found.")
+
+    return best_folder
+
+def seperation_score(mu_vals):
+    for mu in mu_vals:
+        score += min(1-mu,mu)^2
+    return score
 
 def set_seed(seed):
     """Set the random seed for reproducibility."""
