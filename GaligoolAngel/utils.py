@@ -109,3 +109,20 @@ def set_seed(seed):
     torch.manual_seed(seed)
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
+
+def vector_to_symmetric_matrix(vector):
+    # Calculate the size of the matrix n using the inverse of the formula for the elements in the upper triangle
+    n = int((-1 + np.sqrt(1 + 8*len(vector))) / 2)
+    
+    # Initialize an n x n matrix filled with zeros
+    matrix = np.zeros((n, n))
+    
+    # Fill in the upper triangle and mirror it to the lower triangle
+    index = 0
+    for i in range(n):
+        for j in range(i, n):
+            matrix[i, j] = vector[index]
+            matrix[j, i] = vector[index]
+            index += 1
+            
+    return matrix
