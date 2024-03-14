@@ -9,9 +9,9 @@ class Data_params(object):
         # Data Parameters #
         ######################
         # -----------------------------------
-        self.mat_files_directory = '..\\..\\data\\'
-        self.result_directory = '..\\..\\results\\'
-        self.matfile_path = '..\\..\\data\\inputs\\dataset.mat'
+        self.mat_files_directory = '..\\data\\'
+        self.result_directory = '..\\results\\'
+        self.matfile_path = '..\\data\\inputs\\dataset.mat'
         self.folds_num = 5  # cross validation
         self.result_name = ''
         # Extra parameters

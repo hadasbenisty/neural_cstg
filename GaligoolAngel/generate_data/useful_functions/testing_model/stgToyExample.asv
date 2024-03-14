@@ -22,25 +22,17 @@ input_creation_handle = @generateToyExample;
 % stdN = mean(std(N, 1, 2));
 % Save Data
 load("..\data\paths\paths.mat");
-save(fullfile(inputs_path, 'dataset_fake.mat'), 'y', ...
+save(fullfile(relative_path, inputs_path, 'dataset_fake.mat'), 'y', ...
     'features', 'SNR', 'context');
 
 figure;plot(context);
 
 %% Plot Stuff
 fig_example = figure;
-scatter(y(1, [1:500, end-500:end]), y(2, [1:500, end-500:end]), 10, ...
+scatter3(y(1, [1:500, end-500:end]), y(2, [1:500, end-500:end]),context([1:500, end-500:end]), 10, ...
     context([1:500, end-500:end]), "filled");
 colormap('jet');
 title("Y as a function of context")
-xlabel('y 1');
-ylabel("y 2");
-
-fig_x_example = figure;
-scatter(features(1, [1:500, end-500:end]), features(2, [1:500, end-500:end]), 10, ...
-    context([1:500, end-500:end]), "filled");
-colormap('jet');
-title("X as a function of context")
 xlabel('feature 1');
 ylabel("feature 2");
 
