@@ -162,8 +162,15 @@ def set_seed(seed):
         torch.cuda.manual_seed_all(seed)
 
 def vector_to_symmetric_matrix(vector):
-    # Calculate the size of the matrix n using the inverse of the formula for the elements in the upper triangle
-    n = int((-1 + np.sqrt(1 + 8*len(vector))) / 2)
+    # Calculate the minimum size of the matrix n using the inverse of the formula for the elements in the upper triangle
+    n = int(np.ceil((-1 + np.sqrt(1 + 8*len(vector))) / 2))
+    
+    # Calculate the required size of the input vector for a symmetric matrix of size n
+    required_vector_size = n * (n + 1) // 2
+    
+    # Check if the input vector is too short, if so, pad it with zeros
+    if len(vector) < required_vector_size:
+        vector = np.pad(vector, (0, required_vector_size - len(vector)), 'constant')
     
     # Initialize an n x n matrix filled with zeros
     matrix = np.zeros((n, n))
