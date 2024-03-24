@@ -1,0 +1,9 @@
+setuptools~=68.2.0
+torch
+scikit-learn
+numpy
+matplotlib
+numpy
+pandas
+scipy
+seaborn

@@ -12,15 +12,19 @@ from c_stg.utils import import_per_data_type
 from c_stg.data_processing import DataContainer
 
 
-#def main_workflow(data_type='flavors', **kwargs):
-def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
+# def main_workflow(data_type='flavors', **kwargs):
+def main_workflow(data_type='flavors', cstg_args=None, data_args=None):
     # Specific imports
+    if data_args is None:
+        data_args = {}
+    if cstg_args is None:
+        cstg_args = {}
     (acc_score, set_seed, init_criterion, init_optimizer, DataProcessor, data_origanization_params, Data_params,
      hyperparameters_chosen_extraction, visual_results) = \
         (import_per_data_type(data_type))
 
     # Parameters
-    #params = Params_config(data_type, **kwargs)  # kwargs are arguments for Data_params
+    # params = Params_config(data_type, **kwargs)  # kwargs are arguments for Data_params
     params = Params_config(data_type, cstg_kwargs=cstg_args, data_kwargs=data_args)
     params = data_origanization_params(params)  # add res_directory property to params
 
@@ -49,9 +53,6 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
             params.output_dim = num_labels
     else:
         params.output_dim = data.output_label.shape[-1]
-
-
-
 
     if params.include_linear_model:
         for c_value in params.inverse_regularization:
@@ -121,13 +122,13 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
 
                             num_iter += 1
                             if num_iter == 20:
-                                uneffective_flag=False
+                                uneffective_flag = False
 
                         print("-----------------dev acc fold" + str(fold) + " is:" + str(dev_acc_array[-1]))
                         acc_dev_folds.append(dev_acc_array[-1])
 
                         unique_r = np.unique(Container.rte)
-                        #alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+                        # alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
                         mu_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
                         if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
                             w_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
@@ -136,9 +137,9 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                         acc_vals_per_r = np.zeros(len(unique_r))
                         ri = 0
                         for rval in np.unique(Container.rte):
-                            #alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
+                            # alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
                             if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
-                                mu_vals[:, ri], w_vals[:, ri] =\
+                                mu_vals[:, ri], w_vals[:, ri] = \
                                     get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
                             elif params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid":
                                 mu_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
@@ -188,6 +189,3 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
     name = params.res_directory.split("\\")[-1]
     post_process_flow(data_type, name, cstg_args=cstg_args, data_args=data_args)
     print("----FINISH----")
-
-
-
