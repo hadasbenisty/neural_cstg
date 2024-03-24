@@ -186,8 +186,9 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
 
     print("----Start post-processing---")
     name = params.res_directory.split("\\")[-1]
-    post_process_flow(data_type, name, cstg_args=cstg_args, data_args=data_args)
+    results_path = post_process_flow(data_type, name, cstg_args=cstg_args, data_args=data_args)
     print("----FINISH----")
+    return results_path
 
 
 

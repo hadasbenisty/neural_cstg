@@ -118,6 +118,7 @@ def post_process_flow(data_type, directory_name, cstg_args={}, data_args={}):
     mat_name = hyperparameter_combination + "_Final_check" + ".mat"
     # chance level is calculated in DataProcessor
     visual_results(params.infer_directory, mat_name, params)
+    return filename
 
 # if __name__ == '__main__':
 #     # name = ['2024_01_06_22_05_35_animal_4575_date_03_14_19_flavors',
