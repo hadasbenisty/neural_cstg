@@ -29,9 +29,9 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
             B = B.to(params.device).float()
 
             output = model(input, B)
-            output = torch.squeeze(output)
-            loss = criterion(output, torch.squeeze(target))
-            loss.float()
+            output = torch.squeeze(output, axis=1)
+            loss = criterion(output, torch.squeeze(target, axis=1))
+	#loss.float()
 
             if params.stg:
                 stg_loss = torch.mean(model.reg(model.gates.mu/model.sigma))
@@ -104,7 +104,7 @@ def test_process(params, model, test_dataloader, criterion, stg_regularizer, acc
                 labels_pred = torch.concatenate((labels_pred, labels_pred_cur))
 
         else:
-            output = torch.squeeze(output)
+            output = torch.squeeze(output, axis=1)
             y_pred_cur = output.float().detach().cpu().numpy().reshape(-1, 1)
             labels_pred_cur = np.argmax(y_pred_cur, 1)[:, None]
 
@@ -118,8 +118,7 @@ def test_process(params, model, test_dataloader, criterion, stg_regularizer, acc
                 labels_pred = np.vstack((labels_pred, labels_pred_cur))
 
             target = target.to(params.device).float()
-
-        loss = criterion(output, torch.squeeze(target))
+        loss = criterion(output, torch.squeeze(target, axis=1))
         loss += stg_regularizer * torch.mean(model.reg(model.gates.mu/model.sigma))
         train_loss += loss.item() * len(input)
         train_count += len(input)
@@ -127,10 +126,7 @@ def test_process(params, model, test_dataloader, criterion, stg_regularizer, acc
     if params.output_dim == 1:
         labels_pred = torch.tensor(labels_pred.flatten())
 
-    if ~params.classification_flag:
-        acc = acc_score(all_targets, y_pred, params)
-    else:
-        acc = acc_score(all_targets, y_pred, params)
+    acc = acc_score(all_targets, y_pred, params)
     loss = train_loss / train_count
 
     return acc, loss, all_targets, labels_pred

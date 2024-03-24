@@ -10,8 +10,9 @@ class Data_params(object):
         self.animal = '4458'  # mouse number
         self.date = '03_05_19'  # date of experiment
         self.outcome_keys = ['success']  # ['success'] all the outcomes to consider
-        self.context_key = 'time'
-        self.note = "new model, 4458 with flavors context and success classification, 4-8 time, with 40 times same acc until run again"  # save in the log context for self use notes
+        self.context_key = 'flavors'
+        self.note = ("old model, with 40 times same acc until run again,"
+                     " time 6 to 8, 50 epochs instead of 100 to prevent overfitting, with more lambda and hidden_dim choises ")  # save in the log context for self use notes
         # ---- post processing user input ----
         self.manual_random_seed = -1  # seed for not determensric operations
         # -----------------------------------
@@ -26,8 +27,8 @@ class Data_params(object):
         self.folds_num = 5  # cross validation
         self.start_time = -4  # sec
         self.end_time = 8  # sec
-        self.drop_time = 1  #8  # usually drop the first sec #Todo
-        self.total_time = -1  #4 # -1 for all the data duration, else number of sec #Todo
+        self.drop_time = 10  #8  # usually drop the first sec #Todo [1,6,10]
+        self.total_time = 2 #-1  #4 # -1 for all the data duration, else number of sec #Todo [2, 2,2]
         self.sample_per_sec = 30  # samples/sec
         self.window_size_avg = 1  # sec
         self.overlap_avg = 0.5  # sec

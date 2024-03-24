@@ -19,10 +19,10 @@ def import_per_data_type(data_type):
     Data_params = getattr(data_params, 'Data_params')
     # visual
     visual = importlib.import_module(f'{data_type}.visual')
-    visual_results = getattr(visual, 'visual_results')
+    post_process_visualization = getattr(visual, 'post_process_visualization')
 
     return (acc_score, set_seed, init_criterion, init_optimizer, DataProcessor, data_origanization_params, Data_params,
-            hyperparameters_chosen_extraction, visual_results )
+            hyperparameters_chosen_extraction, post_process_visualization)
 
 
 def norm_minmax(x):

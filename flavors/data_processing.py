@@ -34,6 +34,8 @@ class DateProcessor:
         self.window_size_avg = params.window_size_avg  # 1 sec
         self.overlap_avg = params.overlap_avg  # 0.5 sec
 
+        self.conflict = False  # Assume no conflict in date data
+
     def get_output_labels(self, outcome_keys, eff_t_len):
         if outcome_keys[0] == 'flavors':
             success_array = self.data['BehaveData']['success'][0][0]['indicatorPerTrial'][0][0]
@@ -41,13 +43,15 @@ class DateProcessor:
             outcomes = []
             allowed_flavors = []
             for flavor in self.date_flavors: #Todo: add option for 'r' regular
-                if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'r': 4, 'f': 5, 'fail': 0}
                     flavor_array = self.data['BehaveData']['grain'][0][0]['indicatorPerTrial'][0][0]
-                elif flavor == 's':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                elif flavor == 's':
                     flavor_array = self.data['BehaveData']['sucrose'][0][0]['indicatorPerTrial'][0][0]
-                elif flavor == 'q':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                elif flavor == 'q':
                     flavor_array = self.data['BehaveData']['quinine'][0][0]['indicatorPerTrial'][0][0]
-                elif flavor == 'f':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                elif flavor == 'r':
+                    flavor_array = self.data['BehaveData']['regular'][0][0]['indicatorPerTrial'][0][0] #TODO
+                elif flavor == 'f':
                     flavor_array = self.data['BehaveData']['fake'][0][0]['indicatorPerTrial'][0][0]
                 else:
                     raise ValueError("There is no flavor like this")
@@ -59,16 +63,28 @@ class DateProcessor:
 
             outcomes = np.stack(outcomes)
             # Check for conflicts: more than one non-zero value at any position
-            if np.any(np.sum(outcomes != 0, axis=0) > 1):
-                raise ValueError("Conflict detected in flavors")
+            conflict_mask = np.sum(outcomes != 0, axis=0) > 1
+            if np.any(conflict_mask):
+                print("Conflict detected in flavors")
+                self.conflict = True
 
             # Use np.max to combine the arrays, since we know there are no conflicts
             outcomes_par_trial = np.max(outcomes, axis=0)
 
-            if not np.all(np.diff(np.sort(outcomes_par_trial)) == 1):
-                raise ValueError("Not suitable for torch cross entropy loss format")
+            # Consider only the successful trials, failure trials are 0
+            failure_mask = outcomes_par_trial == 0
+            drop_mask = failure_mask | conflict_mask
 
-            output_labels = np.tile(outcomes_par_trial.flatten(), eff_t_len)[:, None]
+            # Convert to torch cross-entropy format
+            # Map non-None values to consecutive integers starting from 0
+            unique_vals = np.unique(outcomes_par_trial[outcomes_par_trial != 0])
+            mapping = {v: i for i, v in enumerate(unique_vals)}
+            output_labels = np.array([mapping[val] if val in mapping else -1 for val in outcomes_par_trial.flatten()])
+
+            output_labels = np.tile(output_labels.flatten(), eff_t_len)[:, None]
+            drop_mask = np.tile(drop_mask.flatten(), eff_t_len)[:, None]
+
+            return output_labels, drop_mask
 
         else:
             outcomes = []
@@ -82,7 +98,7 @@ class DateProcessor:
             output_labels = np.all(stacked_outcomes, axis=1).astype(int)
             output_labels = np.tile(output_labels, eff_t_len)[:, None]
 
-        return output_labels
+            return output_labels, None
 
     def get_explan_feat(self, relative_idx_neu, window_size, overlap, total_samples):
 
@@ -104,19 +120,19 @@ class DateProcessor:
     def get_context_feat(self, context_key, eff_t_len):
 
         if context_key == 'time':
-            return stats.zscore(self.time_win)  # (time_bin-mu(time_bin))/sigma(time_bin)
+            return stats.zscore(self.time_win), None  # (time_bin-mu(time_bin))/sigma(time_bin)
 
         elif context_key == "flavors":
             context = []
             allowed_flavors = []
             for flavor in self.date_flavors:
-                if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'r': 4, 'f': 45}
+                if flavor == 'g':  # {'g': 1, 's': 2, 'q': 3, 'r': 4, 'f': 5, 'fail': 0}
                     flavor_array = self.data['BehaveData']['grain'][0][0]['indicatorPerTrial'][0][0]
-                elif flavor == 's':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                elif flavor == 's':
                     flavor_array = self.data['BehaveData']['sucrose'][0][0]['indicatorPerTrial'][0][0]
-                elif flavor == 'q':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                elif flavor == 'q':
                     flavor_array = self.data['BehaveData']['quinine'][0][0]['indicatorPerTrial'][0][0]
-                elif flavor == 'f':  # {'g': 1, 's': 2, 'q': 3, 'f': 4}
+                elif flavor == 'f':
                     flavor_array = self.data['BehaveData']['fake'][0][0]['indicatorPerTrial'][0][0]
                 elif flavor == 'r':
                     flavor_array = self.data['BehaveData']['regular'][0][0]['indicatorPerTrial'][0][0]
@@ -129,17 +145,33 @@ class DateProcessor:
 
             context = np.stack(context)
             # Check for conflicts: more than one non-zero value at any position
-            if np.any(np.sum(context != 0, axis=0) > 1):
-                raise ValueError("Conflict detected in flavors")
+            conflict_mask_1 = np.sum(context != 0, axis=0) > 1
+            if np.any(conflict_mask_1):
+                print("Conflict detected in flavors")
+                self.conflict = True
+
+            # if np.any(np.sum(context != 0, axis=0) > 1):
+            #     raise ValueError("Conflict detected in flavors")
 
             # Use np.max to combine the arrays, since we know there are no conflicts
-            context_par_trial = np.max(context, axis=0)
+            context_per_trial = np.max(context, axis=0)
 
-            if not np.all(np.isin(context_par_trial, np.array(allowed_flavors))):
-                raise ValueError("Problem with the flavors context")
+            # Check if the combined context has values not in allowed_flavors
+            conflict_mask_2 = ~ np.isin(context_per_trial, np.array(allowed_flavors))
+            if np.any(conflict_mask_2):
+                print("Problem with the flavors context")
+                self.conflict = True
 
-            context = np.tile(context_par_trial.flatten(), eff_t_len)[:, None]
-            return context
+            # if not np.all(np.isin(context_per_trial[~conflict_mask], np.array(allowed_flavors))):
+            #     raise ValueError("Problem with the flavors context")
+
+            # Combine both conflict masks
+            conflict_mask_total = conflict_mask_1 | conflict_mask_2
+
+            context = np.tile(context_per_trial.flatten(), eff_t_len)[:, None]
+            conflict_mask_total = np.tile(conflict_mask_total.flatten(), eff_t_len)[:, None]
+
+            return context, conflict_mask_total
 
         else:
             raise ValueError("No suitable context key")
@@ -187,9 +219,26 @@ class DateProcessor:
         self.time_win = np.repeat(t, trial_num)[:, None]
         self.trials = np.tile(trial_inds, eff_t_len)[:, None]
 
-        self.output_label = self.get_output_labels(outcome_keys, eff_t_len)
+        self.output_label, drop_mask_output = self.get_output_labels(outcome_keys, eff_t_len)
 
-        self.context_feat = self.get_context_feat(context_key, eff_t_len)
+        self.context_feat, drop_mask_context = self.get_context_feat(context_key, eff_t_len)
+
+        # Check if either drop_mask_output or drop_mask_context is None, and handle accordingly
+        if drop_mask_output is None:
+            drop_mask = drop_mask_context
+        elif drop_mask_context is None:
+            drop_mask = drop_mask_output
+        else:
+            # If neither is None, perform logical OR operation
+            drop_mask = drop_mask_output | drop_mask_context
+        if drop_mask is not None:
+            non_drop_mask = ~drop_mask.flatten()
+            self.context_feat = self.context_feat[non_drop_mask]
+            self.output_label = self.output_label[non_drop_mask]
+            self.trials = self.trials[non_drop_mask]
+            self.time_win = self.time_win[non_drop_mask]
+            self.explan_feat = self.explan_feat[non_drop_mask, :]
+
 
 
 class AnimalDataProcessor:
@@ -209,8 +258,13 @@ class AnimalDataProcessor:
         params.end_time = self.Date_data.end_time
         if not params.post_process_mode:
             with open(os.path.join(params.res_directory, 'log.txt'), 'a') as f:
-                # Add a chance level parameter to the log file
+                # Change the end_time parameter in the log file, it will be added again
                 f.write("%s = %s\n" % ('end_time', self.Date_data.end_time))
+            if self.Date_data.conflict:
+                with open(os.path.join(params.res_directory, 'log.txt'), 'a') as f:
+                    # Add a conflict parameter to the log file
+                    f.write("%s = %s\n" % ('conflict_time', 'Has been a conflict'))
+
         self.use_flag = self.Date_data.use_flag
         if not self.use_flag:
             self.params = params
@@ -231,7 +285,7 @@ class AnimalDataProcessor:
                 f.write("%s = %s\n" % ('chance_level', chance_level))
         print(f"chance level is {chance_level}")
         self.trials = self.Date_data.trials
-        self.num_trials = self.trials[-1][0]
+        self.num_trials = len(np.unique(self.trials))
 
         self.foldsnum = params.folds_num
         self.traininds = []
@@ -278,14 +332,15 @@ class AnimalDataProcessor:
 
         kf = KFold(n_splits=self.foldsnum)
         kf.get_n_splits(range(num_trials))
+        unique_trials = np.unique(self.trials)
 
         for traindev_trials, test_trials in kf.split(range(num_trials)):
 
             train_inds, dev_inds = train_test_split(traindev_trials, test_size=0.2, shuffle=True)
 
-            train = self.trials2inds(train_inds, (self.trials - 1))
-            dev = self.trials2inds(dev_inds, (self.trials - 1))
-            test = self.trials2inds(test_trials, (self.trials - 1))
+            train = self.trials2inds(unique_trials[train_inds], self.trials)
+            dev = self.trials2inds(unique_trials[dev_inds], self.trials)
+            test = self.trials2inds(unique_trials[test_trials], self.trials)
 
             self.traininds.append(train)
             self.devinds.append(dev)
@@ -294,9 +349,10 @@ class AnimalDataProcessor:
     def split_train_test(self, num_trials):
 
         train_inds, test_inds = train_test_split(range(num_trials), test_size=0.2, shuffle=True)
+        unique_trials = np.unique(self.trials)
 
-        train = self.trials2inds(train_inds, (self.trials - 1))
-        test = self.trials2inds(test_inds, (self.trials - 1))
+        train = self.trials2inds(unique_trials[train_inds], self.trials)
+        test = self.trials2inds(unique_trials[test_inds], self.trials)
 
         self.traininds.append(train)
         self.testinds.append(test)
