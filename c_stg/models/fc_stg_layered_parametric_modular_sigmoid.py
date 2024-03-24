@@ -143,7 +143,7 @@ def fc_stg_layered_param_modular_model_sigmoid(input_dim,hidden_dim=[10],output_
                                                non_param_stg=False, train_sigma=False):
     
     model = FC_STG_Layered_Param_modular_model_sigmoid(input_dim, hidden_dim, output_dim, param_dim,
-                                                       hyper_hidden_dim, dropout, sigma, stg, classification,
+                                                       hyper_hidden_dim, dropout, sigma, stg,classification,
                                                        include_B_in_input=include_B_in_input,
                                                        non_param_stg=non_param_stg,train_sigma=train_sigma)
     return model

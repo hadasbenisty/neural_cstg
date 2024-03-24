@@ -7,20 +7,16 @@ from c_stg.training import *
 import c_stg.models
 import time
 from sklearn.linear_model import LogisticRegression
-from c_stg.post_processing import post_process_flow
 from c_stg.utils import import_per_data_type
 from c_stg.data_processing import DataContainer
 
-
-#def main_workflow(data_type='flavors', **kwargs):
 def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
     # Specific imports
     (acc_score, set_seed, init_criterion, init_optimizer, DataProcessor, data_origanization_params, Data_params,
-     hyperparameters_chosen_extraction, visual_results) = \
+     hyperparameters_chosen_extraction, post_process_visualization) = \
         (import_per_data_type(data_type))
 
     # Parameters
-    #params = Params_config(data_type, **kwargs)  # kwargs are arguments for Data_params
     params = Params_config(data_type, cstg_kwargs=cstg_args, data_kwargs=data_args)
     params = data_origanization_params(params)  # add res_directory property to params
 
@@ -41,17 +37,15 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
     params.input_dim = data.explan_feat.shape[-1]
     # input_dim = no. of contextual features
     params.param_dim = 1
+    #
+    num_labels = len(np.unique(np.array(data.output_label)))
     if params.classification_flag:
-        num_labels = len(np.unique(np.array(data.output_label)))
         if num_labels == 2:
             params.output_dim = 1
         else:
             params.output_dim = num_labels
     else:
         params.output_dim = data.output_label.shape[-1]
-
-
-
 
     if params.include_linear_model:
         for c_value in params.inverse_regularization:
@@ -121,12 +115,12 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
 
                             num_iter += 1
                             if num_iter == 20:
-                                uneffective_flag=False
+                                uneffective_flag = False
 
                         print("-----------------dev acc fold" + str(fold) + " is:" + str(dev_acc_array[-1]))
                         acc_dev_folds.append(dev_acc_array[-1])
 
-                        unique_r = np.unique(Container.rte)
+                        unique_r = np.unique(Container.rte)  # returns a sorted array
                         #alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
                         mu_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
                         if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
@@ -134,6 +128,11 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                         else:
                             w_vals = []
                         acc_vals_per_r = np.zeros(len(unique_r))
+
+                        targets_per_r = [None] * len(unique_r)
+                        pred_labels_per_r = [None] * len(unique_r)
+
+
                         ri = 0
                         for rval in np.unique(Container.rte):
                             #alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
@@ -155,8 +154,12 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                             test_dataloader_tmp = torch.utils.data.DataLoader(test_set_tmp,
                                                                               batch_size=params.batch_size,
                                                                               shuffle=False)
-                            acc_dev, _, _, _ = test_process(params, model, test_dataloader_tmp, criterion,
-                                                            stg_regularizer, acc_score)
+
+                            acc_dev, _, all_targets, labels_pred =\
+                                test_process(params, model, test_dataloader_tmp, criterion,
+                                             stg_regularizer, acc_score)
+                            targets_per_r[ri] = all_targets
+                            pred_labels_per_r[ri] = labels_pred
                             acc_vals_per_r[ri] = acc_dev
                             ri += 1
 
@@ -165,7 +168,8 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                                       'train_acc_array': train_acc_array, 'dev_acc_array': dev_acc_array,
                                       'train_loss_array': train_loss_array, 'dev_loss_array': dev_loss_array,
                                       'unique_r': unique_r, 'mu_vals': mu_vals,
-                                      'w_vals': w_vals, 'acc_vals_per_r': acc_vals_per_r})
+                                      'w_vals': w_vals, 'acc_vals_per_r': acc_vals_per_r,
+                                      'targets_per_r': targets_per_r, 'pred_labels_per_r': pred_labels_per_r})
 
                         end_time = time.time()  # Record end time
                         elapsed_time = end_time - start_time
@@ -184,9 +188,8 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                         fe.write(msg1)
                         fe.write(msg2)
 
-    print("----Start post-processing---")
-    name = params.res_directory.split("\\")[-1]
-    post_process_flow(data_type, name, cstg_args=cstg_args, data_args=data_args)
+    # print("----Start post-processing---")
+    #post_process_visualization(params.res_directory)
     print("----FINISH----")
 
 
