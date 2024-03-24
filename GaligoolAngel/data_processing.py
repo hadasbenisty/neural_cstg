@@ -28,16 +28,17 @@ class DataProcessor:
         self.folds_num = params.folds_num
         self.testinds = []  # test batch
         self.restinds = []  # all the indices that are not test
-        self.split_rest_test()  # Splits the data into test and rest
-
-        testinds_temp = [self.testinds]
-        for t in range(self.folds_num - 1):
-            testinds_temp.append(self.testinds)
-        self.testinds = testinds_temp
-
         self.traininds = []  # train batch
         self.devinds = []  # validation batch
-        self.split_data_into_folds()  # splits the rest of the data into folds_num with train and dev
+        self.split_data_into_folds()
+        self.split_dev_train()  # Splits the data into test and rest
+
+        '''testinds_temp = [self.testinds]
+        for t in range(self.folds_num - 1):
+            testinds_temp.append(self.testinds)
+        self.testinds = testinds_temp'''
+
+        # self.split_data_into_folds()  # splits the rest of the data into folds_num with train and dev
 
         # Extra Parameters
         self.start_time = params.start_time
@@ -49,13 +50,13 @@ class DataProcessor:
 
 
         """
-        kf = KFold(n_splits=self.folds_num)
+        kf = KFold(n_splits=self.folds_num, shuffle=True)
 
-        for train_index, dev_index in kf.split(self.explan_feat[self.restinds]):
+        for train_index, test_index in kf.split(self.explan_feat):
             self.traininds.append(train_index)
-            self.devinds.append(dev_index)
+            self.testinds.append(test_index)
 
-    def split_rest_test(self, train_size=0.8):
+    def split_dev_train(self, train_size=0.8):
         """
         Splits the data into training and test sets after shuffling.
         Changes the object test_inds and rest_inds properties
@@ -65,15 +66,17 @@ class DataProcessor:
         """
         if not 0 <= train_size <= 1:
             raise ValueError("Train size must be between 0 and 1")
-        data_size = len(self.explan_feat)  # The number of samples we have
-        indices = list(range(data_size))
+
+        indices = self.traininds
         random.shuffle(indices)
+        train_indices = []
+        dev_indices = []
+        for fold_i in (np.linspace(0, self.folds_num - 1, self.folds_num)).astype(int):
+            train_count = int(len(indices[fold_i]) * train_size)
+            train_indices.append(indices[fold_i][:train_count])
+            dev_indices.append(indices[fold_i][train_count:])
 
-        train_count = int(data_size * train_size)
-        train_indices = indices[:train_count]
-        test_indices = indices[train_count:]
-
-        self.testinds = test_indices
+        self.devinds = dev_indices
         self.restinds = train_indices
 
 

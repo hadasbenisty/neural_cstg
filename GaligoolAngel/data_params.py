@@ -9,9 +9,9 @@ class Data_params(object):
         # Data Parameters #
         ######################
         # -----------------------------------
-        self.mat_files_directory = '..\\..\\data\\'
-        self.result_directory = '..\\..\\results\\'
-        self.matfile_path = '..\\..\\data\\inputs\\dataset.mat'
+        self.mat_files_directory = '..\\data\\'
+        self.result_directory = '..\\results\\'
+        self.matfile_path = '..\\data\\inputs\\dataset.mat'
         self.folds_num = 5  # cross validation
         self.result_name = ''
         # Extra parameters
@@ -25,18 +25,9 @@ class Data_params(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        # Calculate Inner Results Directory
-        data = spio.loadmat(self.matfile_path)
-        if 'fake' in self.matfile_path:
-            number_features = data["features"].shape[0]
-            number_outputs = data["y"].shape[0]
-            number_context = np.max(np.unique(data["context"]))
-            number_meas = data["context"].shape[1]
-            SNR_level = int(data["SNR"].flatten())
-            folder_name = (f"number_features_{number_features}_number_outputs_"
-                           f"{number_outputs}_number_context_{number_context}_number_meas_"
-                           f"{number_meas}_SNR_level_{SNR_level}")
-            self.result_name = os.path.join(folder_name)
+
+
+
 
 def data_origanization_params(params):
     running_datetime = datetime.now()  # TODO: Fix date
@@ -49,5 +40,16 @@ def data_origanization_params(params):
     # params.sheet_num = params.animal2sheet_num[params.animal]
 
     # params.bar_graph = True if params.context_key == 'flavors' else False
-
+    # Calculate Inner Results Directory
+    data = spio.loadmat(params.matfile_path)
+    if 'fake' in params.matfile_path:
+        number_features = data["features"].shape[0]
+        number_outputs = data["y"].shape[0]
+        number_context = np.max(np.unique(data["context"]))
+        number_meas = data["context"].shape[1]
+        SNR_level = int(data["SNR"].flatten())
+        folder_name = (f"number_features_{number_features}_number_outputs_"
+                       f"{number_outputs}_number_context_{number_context}_number_meas_"
+                       f"{number_meas}_SNR_level_{SNR_level}")
+        params.res_directory = '_'.join([params.res_directory, folder_name])
     return params

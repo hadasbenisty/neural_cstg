@@ -1,0 +1,11 @@
+function [output] = save_data_for_cstg(CC,train_stage,diff_map,smooth,datafile_name)
+%UNTITLED2 Summary of this function goes here
+%   Detailed explanation goes here
+features=CC;
+context = train_stage.T;
+y = smooth_vector(diff_map,smooth).T;
+load("..\data\paths\paths.mat");
+save(fullfile(relative_path, inputs_path, datafile_name), 'y', ...
+    'features', 'context');
+output = y;
+end

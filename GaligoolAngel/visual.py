@@ -4,7 +4,7 @@ matplotlib.use('Agg')  # Set the backend to 'Agg'
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.io as spio
-
+from utils import vector_to_symmetric_matrix
 
 # Visualization of the result after post-processing
 def visual_results(path, mat_name, params):
@@ -60,13 +60,23 @@ def visual_results(path, mat_name, params):
 
     mus_vec_r = []
     for i in np.linspace(0, len(mu_vals)-1, len(mu_vals)).astype(int):
-        mus_vec_r.append(mus[i])
+        mus_vec_r.append(mu_vals[i])
 
     fig, axs = plt.subplots(mu_vals.shape[1])
     for ii in np.linspace(0, mu_vals.shape[1] - 1, mu_vals.shape[1]).astype(int):
-        axs[ii].bar(np.linspace(1, mu_vals[:, 0].size, mu_vals[:, 0].size).astype(int), mu_vals[:, ii], label='Features Weights')
+        axs[ii].bar(np.linspace(1, mu_vals[:, 0].size, mu_vals[:, 0].size).astype(int), mu_vals[:, ii],
+                    label='Features Weights')
         axs[ii].set_xlabel('Feature Number #')
         axs[ii].set_ylabel('Weight')
         axs[ii].set_title(['Weights as a function of numbers for context no.', str(ii+1)])
-    plt.tight_layout()
     plt.savefig(os.path.join(path, 'feature_weights.png'))
+
+    for ii in np.linspace(0, mu_vals.shape[1] - 1, mu_vals.shape[1]).astype(int):
+        plt.figure()
+        sym_mat = vector_to_symmetric_matrix(mu_vals[:, ii])
+        plt.imshow(sym_mat)
+        plt.title(f'Weights as a function of numbers for context no. {str(ii+1)}')
+        plt.tight_layout()
+        plt.savefig(os.path.join(path, f'weights_matrix_context_{str(ii+1)}.png'))
+
+    
