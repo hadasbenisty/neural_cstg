@@ -163,7 +163,7 @@ def set_seed(seed):
 
 def vector_to_symmetric_matrix(vector):
     # Calculate the minimum size of the matrix n using the inverse of the formula for the elements in the upper triangle
-    n = int(np.ceil((-1 + np.sqrt(1 + 8*len(vector))) / 2))
+    n = int(np.ceil((np.sqrt(1 + 8*len(vector))) / 2))
     
     # Calculate the required size of the input vector for a symmetric matrix of size n
     required_vector_size = n * (n + 1) // 2
@@ -184,3 +184,22 @@ def vector_to_symmetric_matrix(vector):
             index += 1
             
     return matrix
+
+def vector_to_matrix_index(i):
+    """
+    Convert a vector index to matrix row and column indices for a symmetric matrix.
+
+    Parameters:
+    - i: The index in the vector.
+    - N: The size of the NxN symmetric matrix.
+
+    Returns:
+    - (row, col): A tuple of row and column indices in the matrix.
+    """
+    # Identify the row by solving the quadratic equation or iterative searching
+    r = int(np.floor((np.sqrt(1 + 8*i)) / 2))
+    
+    # Calculate the column index based on the row
+    c = i - r * (r + 1) // 2 + r
+    
+    return (r, c)
