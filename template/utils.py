@@ -6,17 +6,9 @@ import torch.nn as nn
 import scipy.io as spio
 import random
 
-
+# this function should be implemented per project
 def acc_score(targets, prediction, params):
-    if params.classification_flag and params.output_dim == 1:
-        acc = accuracy_score(targets, np.int64((prediction.reshape((1, -1)) > 0.5).reshape(-1, 1)))
-    elif params.classification_flag and params.output_dim > 2:
-        _, predicted_labels = torch.max(prediction, 1)
-        correct_predictions = (predicted_labels == targets.flatten()).sum().item()
-        total_predictions = targets.size(0)
-        acc = correct_predictions / total_predictions
-    else:
-        raise ValueError("Not supported in this code version")
+    raise ValueError("Implement me")
     return acc
 
 
@@ -24,8 +16,9 @@ def get_subdirectories(directory):
     subdirectories = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
     return subdirectories
 
-
+# this function should be implemented per project
 def init_criterion(param):
+    raise ValueError("Implement me")
     if param.output_dim == 1:
         criterion = nn.BCELoss()
     elif param.output_dim > 2:
@@ -34,9 +27,10 @@ def init_criterion(param):
         raise ValueError("Init criterion problem")
     return criterion
 
-
+# this function should be implemented per project
 def init_optimizer(model, learning_rate):
     optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate, betas=(0.9, 0.999))
+    raise ValueError("Implement me")
     return optimizer
 
 
