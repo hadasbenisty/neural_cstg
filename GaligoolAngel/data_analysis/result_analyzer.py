@@ -2,9 +2,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import scipy.io as spio
-from result_processor import ResultProcessor
 import networkx as nx
-import community as community_louvain
+# import community as community_louvain
 
 class ResultAnalyzer:
     """
@@ -25,14 +24,28 @@ class ResultAnalyzer:
         self.degs = []
         self.eigen_values = []
         self.modularity = []
-        self.num_communities []
+        self.num_communities = []
         self.centrality_matrix = []
+        self.avg_corr = []
         
+    # Correlation Analysis
+    def avg_corr_analysis(self, session_partition=None):
+        """Calculates the Average Correaltion in the network throught the session.
+            If given a session_partition it calculates the average over each session partition
+
+        Args:
+            session_partition (list): a list containing at each element a list or array of indices in the last dimension of the adjancy matrix that are relevant for that session
+        """
+        if session_partition is None:
+            session_partition = np.range(self.adjacency_matrix.shape[-1])
+        for session in session_partition:
+            self.avg_corr.append(np.mean(self.adjacency_matrix[:, :, session]))
     # Graph Analysis
     def degree_analysis(self):
         """
         Performs Degree Analysis on the process given
         """
+        self.degs = []
         for gr in self.g:
             self.degs.append(nx.degree_centrality(gr))
             # Determine the matrix size
@@ -51,10 +64,12 @@ class ResultAnalyzer:
         """
         Performs EigenValues Analysis on the process given
         """
+        self.eigen_values = []
         for t in range(self.adjacency_matrix.shape[-1]):
             self.eigen_values.append(np.linalg.eigvals(self.adjacency_matrix[:, :, t]))
+        self.eigen_values = np.row_stack(self.eigen_values)
     
-    def community_analysis(self):
+    '''def community_analysis(self):
         self.modularity = []
         self.num_communities = []
         for gr in self.g:
@@ -62,7 +77,7 @@ class ResultAnalyzer:
             modularity_t = community_louvain.modularity(partition=partition, G=gr)
             num_communities_t = len(set(partition.values))
             self.modularity.append(modularity_t)
-            self.num_communities.append(num_communities_t)
+            self.num_communities.append(num_communities_t)'''
 
     
     # Plotting Results
@@ -81,6 +96,7 @@ class ResultAnalyzer:
             self.plot_degree()
             self.plot_eigen_values()
             self.plot_community()
+            self.plot_avg_corr()
         elif type == "degree":
             self.plot_degree()
         elif type == 'eigenvals':
@@ -94,8 +110,8 @@ class ResultAnalyzer:
         plt.figure()
         plt.imshow(self.centrality_matrix)
         plt.title("The Degree Of The Nodes Along The Process")
-        plt.ylabel("Nodes [#]")
-        plt.xlabel("Process Time [#]")
+        plt.xlabel("Nodes [#]")
+        plt.ylabel("Process Time [#]")
     
     def plot_community(self):
         # Create a figure with 2 subplots (vertically arranged)
@@ -117,7 +133,14 @@ class ResultAnalyzer:
 
     def plot_eigen_values(self):
         plt.figure()
-        plt.plot(self.eigen_values[0, :])
+        plt.plot(self.eigen_values[:, 0])
         plt.title("The Biggest EigenValue Along The Process")
         plt.ylabel("EigenValue")
+        plt.xlabel("Process [#]")
+    
+    def plot_avg_corr(self):
+        plt.figure()
+        plt.plot(self.avg_corr)
+        plt.title("The Average Correlation in the network during the process")
+        plt.ylabel("Correaltion")
         plt.xlabel("Process [#]")

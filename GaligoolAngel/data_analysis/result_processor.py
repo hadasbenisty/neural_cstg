@@ -33,17 +33,17 @@ class ResultProcessor:
         meaning they do not contribute to the process of the diffusion map
         """
         feature_var = np.var(self.feature_weights, axis = 1)
-        self.dynamic_features = np.where(feature_var > 0.025) # Just a value that is bigger than 0
+        self.dynamic_features = np.array(np.where(feature_var > 0.025)) # Just a value that is bigger than 0
         feature_mean = np.mean(self.feature_weights, axis=1)
-        self.important_features = np.where(feature_mean > 0.025)
-        self.not_important_features = np.where(feature_mean <= 0.025)
+        self.important_features = np.array(np.where(feature_mean > 0.025))
+        self.not_important_features = np.array(np.where(feature_mean <= 0.025))
 
     def find_important_neurons(self):
         """
         Takes the relevant neurons from the important features
         """
-        neurons_num = vector_to_symmetric_matrix(self.feature_weights).shape[0]
-        self.dynamic_neurons = vector_to_matrix_index(self.dynamic_features)
-        self.important_neurons = vector_to_matrix_index(self.important_features)
-        self.not_important_neurons = vector_to_matrix_index(self.not_important_features)
+        # neurons_num = vector_to_symmetric_matrix(self.feature_weights).shape[0]
+        self.dynamic_neurons = np.unique(vector_to_matrix_index(self.dynamic_features)[:, 0])
+        self.important_neurons = np.unique(vector_to_matrix_index(self.important_features)[:, 0])
+        self.not_important_neurons = np.unique(vector_to_matrix_index(self.not_important_features)[:, 0])
         self.not_important_neurons = np.array(list(set(self.not_important_neurons) - set(self.important_neurons)))

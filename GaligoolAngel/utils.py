@@ -163,25 +163,34 @@ def set_seed(seed):
 
 def vector_to_symmetric_matrix(vector):
     # Calculate the minimum size of the matrix n using the inverse of the formula for the elements in the upper triangle
-    n = int(np.ceil((np.sqrt(1 + 8*len(vector))) / 2))
+    n = (np.ceil((-1 + np.sqrt(1 + 8*(vector.shape[0]))) / 2)).astype("int")
     
     # Calculate the required size of the input vector for a symmetric matrix of size n
     required_vector_size = n * (n + 1) // 2
     
     # Check if the input vector is too short, if so, pad it with zeros
-    if len(vector) < required_vector_size:
-        vector = np.pad(vector, (0, required_vector_size - len(vector)), 'constant')
+    if vector.shape[0] < required_vector_size:
+        vector = np.pad(vector, (0, required_vector_size - (vector.shape[0])), 'constant')
     
     # Initialize an n x n matrix filled with zeros
-    matrix = np.zeros((n, n))
+    if vector.ndim > 1:
+        shape_mat = (n, n, vector.shape[-1])
+        num_vecs = vector.shape[-1]
+    else:
+        shape_mat = (n,n,1)
+        num_vecs = 1
+        vector.reshape((vector.size, 1))
+    matrix = np.zeros(shape_mat)
     
     # Fill in the upper triangle and mirror it to the lower triangle
-    index = 0
-    for i in range(n):
-        for j in range(i, n):
-            matrix[i, j] = vector[index]
-            matrix[j, i] = vector[index]
-            index += 1
+    
+    for vec in range(num_vecs):
+        index = 0
+        for i in range(n):
+            for j in range(i, n):
+                matrix[i, j, vec] = vector[index, vec]
+                matrix[j, i, vec] = vector[index, vec]
+                index += 1
             
     return matrix
 
@@ -197,9 +206,9 @@ def vector_to_matrix_index(i):
     - (row, col): A tuple of row and column indices in the matrix.
     """
     # Identify the row by solving the quadratic equation or iterative searching
-    r = int(np.floor((np.sqrt(1 + 8*i)) / 2))
-    
+    r = (np.floor((-1 + np.sqrt(1 + 8*i)) / 2).flatten()).astype("int")
     # Calculate the column index based on the row
     c = i - r * (r + 1) // 2 + r
+    c = c.flatten()
     
-    return (r, c)
+    return np.column_stack((r, c))
