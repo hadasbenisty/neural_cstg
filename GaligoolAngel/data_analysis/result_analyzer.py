@@ -9,7 +9,7 @@ class ResultAnalyzer:
     """
     A class to perform analysis on the results, it is given a subset of features.
     """
-    def __init__(self, adjacency_matrix):
+    def __init__(self, adjacency_matrix, session_partition=[]):
         """
 
         Args:
@@ -27,6 +27,7 @@ class ResultAnalyzer:
         self.num_communities = []
         self.centrality_matrix = []
         self.avg_corr = []
+        self.session_partition = session_partition # A list of lists that consists the time samples for each session (teh length of the list is the number of sessions)
         
     # Correlation Analysis
     def avg_corr_analysis(self, session_partition=None):
@@ -37,7 +38,7 @@ class ResultAnalyzer:
             session_partition (list): a list containing at each element a list or array of indices in the last dimension of the adjancy matrix that are relevant for that session
         """
         if session_partition is None:
-            session_partition = np.range(self.adjacency_matrix.shape[-1])
+            session_partition = self.session_partition # np.range(self.adjacency_matrix.shape[-1])
         for session in session_partition:
             self.avg_corr.append(np.mean(self.adjacency_matrix[:, :, session]))
     # Graph Analysis
@@ -60,7 +61,7 @@ class ResultAnalyzer:
             for node, centrality in graph_centrality.items():
                 self.centrality_matrix[i, node] = centrality
     
-    def eigen_values_analysis(self):
+    def eigen_values_analysis(self, partition=False):
         """
         Performs EigenValues Analysis on the process given
         """
@@ -68,7 +69,9 @@ class ResultAnalyzer:
         for t in range(self.adjacency_matrix.shape[-1]):
             self.eigen_values.append(np.linalg.eigvals(self.adjacency_matrix[:, :, t]))
         self.eigen_values = np.row_stack(self.eigen_values)
-    
+        if partition:
+            for session in self.session_partition:
+                eigen_values_tmp = 
     '''def community_analysis(self):
         self.modularity = []
         self.num_communities = []

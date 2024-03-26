@@ -35,19 +35,20 @@ for session in sessions:
 
 # Taking Subset Of Features
 cc_dynamic_analysis = cc[results_processor.dynamic_neurons[:, None, None], results_processor.dynamic_neurons[None, :, None], :].squeeze()
-analyzer = ResultAnalyzer(cc_dynamic_analysis)
+analyzer = ResultAnalyzer(cc_dynamic_analysis, sessions_order)
 # analyzer.community_analysis()
 analyzer.degree_analysis()
 analyzer.eigen_values_analysis()
-analyzer.avg_corr_analysis(sessions_order)
-analyzer.plot_analysis_results("all")
+analyzer.avg_corr_analysis()
+analyzer.plot_avg_corr()
+#analyzer.plot_analysis_results("all")
 
 cc_important_analysis = cc[results_processor.important_neurons[:, None, None], results_processor.important_neurons[None, :, None], :].squeeze()
-analyzer_imp = ResultAnalyzer(cc_important_analysis)
+analyzer_imp = ResultAnalyzer(cc_important_analysis, sessions_order)
 # analyzer.community_analysis()
 analyzer_imp.degree_analysis()
 analyzer_imp.eigen_values_analysis()
-analyzer_imp.avg_corr_analysis(sessions_order)
-analyzer_imp.plot_analysis_results("all")
-
+analyzer_imp.avg_corr_analysis()
+# analyzer_imp.plot_corr_analysis()
+analyzer_imp.plot_avg_corr()
 plt.show()
