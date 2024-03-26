@@ -19,7 +19,7 @@ data_params = {'matfile_path': 'C:/Users/hadas-stud-group2/Documents/GitHub/neur
 '''
 result_path = main_workflow(cstg_args=cstg_params, data_type=our_folder, data_args=data_params)
 '''
-result_path = '..\\results\\_2024_03_25_19_37_49_animal_1\\c-stg_hidden[30, 500]_lr0.0005_lam0.1_Final_check.mat'
+result_path = '..\\results\\_2024_03_25_19_37_49_animal_1\\c-stg_hidden[50, 500]_lr0.0005_lam0.1_Final_check.mat'
 # Analyzing Results
 results_processor = ResultProcessor(result_path)
 

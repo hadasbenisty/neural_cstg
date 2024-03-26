@@ -1,3 +1,4 @@
+from cv2 import eigen
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -61,17 +62,21 @@ class ResultAnalyzer:
             for node, centrality in graph_centrality.items():
                 self.centrality_matrix[i, node] = centrality
     
-    def eigen_values_analysis(self, partition=False):
+    def eigen_values_analysis(self):
         """
-        Performs EigenValues Analysis on the process given
+        Performs EigenValues Analysis on the process given. If the object has a session partition, it perfeoms the analysis based on sessions.
         """
+
         self.eigen_values = []
         for t in range(self.adjacency_matrix.shape[-1]):
             self.eigen_values.append(np.linalg.eigvals(self.adjacency_matrix[:, :, t]))
         self.eigen_values = np.row_stack(self.eigen_values)
-        if partition:
+        if len(self.session_partition) > 0:
+            eigen_values_tmp = []
             for session in self.session_partition:
-                eigen_values_tmp = 
+                eigen_values_tmp.append(np.mean(self.eigen_values[session, :], axis=0))
+            self.eigen_values = np.row_stack(eigen_values_tmp)
+
     '''def community_analysis(self):
         self.modularity = []
         self.num_communities = []
@@ -136,10 +141,17 @@ class ResultAnalyzer:
 
     def plot_eigen_values(self):
         plt.figure()
-        plt.plot(self.eigen_values[:, 0])
-        plt.title("The Biggest EigenValue Along The Process")
-        plt.ylabel("EigenValue")
-        plt.xlabel("Process [#]")
+        if len(self.session_partition) > 0:
+            for session, s_i in enumerate(self.session_partition):
+                plt.plot(self.eigen_values[s_i, :], label=f"Session no. {s_i + 1}")
+            plt.title("EigenValues Along Sessions")
+            plt.xlabel("Sessions [#]")
+            plt.ylabel("EigenValues")
+        else:
+            plt.plot(self.eigen_values[:, 0])
+            plt.title("The Biggest EigenValue Along The Process")
+            plt.ylabel("EigenValue")
+            plt.xlabel("Process [#]")
     
     def plot_avg_corr(self):
         plt.figure()
