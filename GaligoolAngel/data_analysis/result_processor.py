@@ -19,7 +19,7 @@ class ResultProcessor:
         self.important_neurons = []
         self.not_important_neurons = []
         self.find_important_features()
-        self.find_important_neurons()
+        self.find_important_neurons()\
 
     
     def find_important_features(self):

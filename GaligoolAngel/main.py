@@ -1,5 +1,6 @@
 
 # from unittest.runner import _ResultClassType
+from GaligoolAngel.data_analysis.group_result_analyzer import GroupResultAnalyzer
 from GaligoolAngel.utils import vector_to_matrix_index, vector_to_symmetric_matrix
 from c_stg.train_main import main_workflow
 #from c_stg.train_main import main_workflow
@@ -36,7 +37,7 @@ for session in sessions:
 
 # Taking Subset Of Features
 cc_dynamic_analysis = cc[results_processor.dynamic_neurons[:, None, None], results_processor.dynamic_neurons[None, :, None], :].squeeze()
-analyzer = ResultAnalyzer(cc_dynamic_analysis, sessions_order)
+analyzer = ResultAnalyzer(cc_dynamic_analysis, results_processor.dynamic_neurons, sessions_order)
 # analyzer.community_analysis()
 analyzer.degree_analysis()
 analyzer.eigen_values_analysis()
@@ -45,7 +46,7 @@ analyzer.plot_eigen_values(heatmap=True)
 #analyzer.plot_analysis_results("all")
 
 cc_important_analysis = cc[results_processor.important_neurons[:, None, None], results_processor.important_neurons[None, :, None], :].squeeze()
-analyzer_imp = ResultAnalyzer(cc_important_analysis, sessions_order)
+analyzer_imp = ResultAnalyzer(cc_important_analysis, results_processor.important_neurons, sessions_order)
 # analyzer.community_analysis()
 analyzer_imp.degree_analysis()
 analyzer_imp.eigen_values_analysis()
@@ -54,7 +55,10 @@ analyzer_imp.avg_corr_analysis()
 analyzer_imp.plot_eigen_values()
 
 ## All Neurons
-analyzer_all = ResultAnalyzer(cc, sessions_order)
+analyzer_all = ResultAnalyzer(cc, np.linspace(0, cc.shape[0]-1, cc.shape[0]), sessions_order)
 analyzer_all.eigen_values_analysis()
 analyzer_all.plot_eigen_values(heatmap=True)
+
+## Correlation Between SubSets:
+subset_analyzer = GroupResultAnalyzer([analyzer_imp, analyzer, analyzer_all], ["important", "dynamic", "all"], cc)
 plt.show()

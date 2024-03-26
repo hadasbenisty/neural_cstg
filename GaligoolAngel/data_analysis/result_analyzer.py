@@ -10,7 +10,7 @@ class ResultAnalyzer:
     """
     A class to perform analysis on the results, it is given a subset of features.
     """
-    def __init__(self, adjacency_matrix, session_partition=[]):
+    def __init__(self, adjacency_matrix, neurons, session_partition=[]):
         """
 
         Args:
@@ -18,6 +18,7 @@ class ResultAnalyzer:
             last dimension indicates the process over time
         """
         self.adjacency_matrix = adjacency_matrix # The correaltions of the subset along the learning
+        self.neurons = neurons
         self.g = [] # All the graphs represented in the learning process
         for n in range(adjacency_matrix.shape[-1]):
             self.g.append(nx.Graph(adjacency_matrix[:, :, n]))
