@@ -1,4 +1,5 @@
 
+# from unittest.runner import _ResultClassType
 from GaligoolAngel.utils import vector_to_matrix_index, vector_to_symmetric_matrix
 from c_stg.train_main import main_workflow
 #from c_stg.train_main import main_workflow
@@ -19,7 +20,7 @@ data_params = {'matfile_path': 'C:/Users/hadas-stud-group2/Documents/GitHub/neur
 '''
 result_path = main_workflow(cstg_args=cstg_params, data_type=our_folder, data_args=data_params)
 '''
-result_path = '..\\results\\_2024_03_25_19_37_49_animal_1\\c-stg_hidden[50, 500]_lr0.0005_lam0.1_Final_check.mat'
+result_path = '..\\results\\_2024_03_25_19_37_49_animal_1\\c-stg_hidden[30, 500]_lr0.0005_lam0.1_Final_check.mat'
 # Analyzing Results
 results_processor = ResultProcessor(result_path)
 
@@ -40,7 +41,7 @@ analyzer = ResultAnalyzer(cc_dynamic_analysis, sessions_order)
 analyzer.degree_analysis()
 analyzer.eigen_values_analysis()
 analyzer.avg_corr_analysis()
-analyzer.plot_avg_corr()
+analyzer.plot_eigen_values(heatmap=True)
 #analyzer.plot_analysis_results("all")
 
 cc_important_analysis = cc[results_processor.important_neurons[:, None, None], results_processor.important_neurons[None, :, None], :].squeeze()
@@ -50,5 +51,10 @@ analyzer_imp.degree_analysis()
 analyzer_imp.eigen_values_analysis()
 analyzer_imp.avg_corr_analysis()
 # analyzer_imp.plot_corr_analysis()
-analyzer_imp.plot_avg_corr()
+analyzer_imp.plot_eigen_values()
+
+## All Neurons
+analyzer_all = ResultAnalyzer(cc, sessions_order)
+analyzer_all.eigen_values_analysis()
+analyzer_all.plot_eigen_values(heatmap=True)
 plt.show()

@@ -1,4 +1,4 @@
-from cv2 import eigen
+# from cv2 import eigen
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -139,14 +139,22 @@ class ResultAnalyzer:
 
         plt.tight_layout()  # Adjust layout to not overlap
 
-    def plot_eigen_values(self):
+    def plot_eigen_values(self, heatmap=False):
         plt.figure()
         if len(self.session_partition) > 0:
-            for session, s_i in enumerate(self.session_partition):
-                plt.plot(self.eigen_values[s_i, :], label=f"Session no. {s_i + 1}")
-            plt.title("EigenValues Along Sessions")
-            plt.xlabel("Sessions [#]")
-            plt.ylabel("EigenValues")
+            if not heatmap:
+                for s_i in range(len(self.session_partition)):
+                    plt.plot(np.abs(self.eigen_values[s_i, :]), label=f"Session no. {s_i + 1}")
+                plt.title("EigenValues Along Sessions")
+                plt.xlabel("Neurons [#]")
+                plt.ylabel("EigenValues")
+                plt.legend()
+                
+            else:
+                plt.imshow(np.abs(self.eigen_values) / np.abs(self.eigen_values[:, 0][:, np.newaxis]))
+                plt.xlabel("Neurons [#]")
+                plt.ylabel("Sessions [#]")
+                plt.colorbar()
         else:
             plt.plot(self.eigen_values[:, 0])
             plt.title("The Biggest EigenValue Along The Process")
