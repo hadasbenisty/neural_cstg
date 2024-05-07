@@ -38,7 +38,7 @@ def post_process_flow(data_type, directory_name, cstg_args={}, data_args={}):
     data = DataProcessor(params)
     params = data.params
     # input_dim = no. of explanatory features
-    params.input_dim = data.explan_feat.shape[-1]
+    params.input_dim = data.explain_feat.shape[-1]
     # input_dim = no. of contextual features
     params.param_dim = 1
     # output_dim - dependant on whether we classify or not.

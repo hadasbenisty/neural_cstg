@@ -342,6 +342,7 @@ class AnimalDataProcessor:
             dev = self.trials2inds(unique_trials[dev_inds], self.trials)
             test = self.trials2inds(unique_trials[test_trials], self.trials)
 
+            # it list of the sublists for every type of data
             self.traininds.append(train)
             self.devinds.append(dev)
             self.testinds.append(test)

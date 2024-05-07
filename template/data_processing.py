@@ -39,7 +39,7 @@ class DateProcessor:
        
         samples_num = ..
         
-        self.explan_feat = self.get_explan_feat(..)
+        self.explain_feat = self.get_explan_feat(..)
 
        
 
@@ -60,7 +60,7 @@ class TemplateDataProcessor:
         
 
         # The combined data from all chosen dates
-        self.explan_feat = self.Date_data.explan_feat  # after multiply by contextual gates will be input to the prediction model
+        self.explan_feat = self.Date_data.explain_feat  # after multiply by contextual gates will be input to the prediction model
         self.context_feat = self.Date_data.context_feat  # inputs to the hyper-network that creates mu vector
         self.output_label = self.Date_data.output_label  # labels
         # Chance level is proportion of the most frequent class

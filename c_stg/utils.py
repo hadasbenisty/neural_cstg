@@ -19,7 +19,7 @@ def import_per_data_type(data_type):
     Data_params = getattr(data_params, 'Data_params')
     # visual
     visual = importlib.import_module(f'{data_type}.visual')
-    post_process_visualization = getattr(visual, 'post_process_visualization')
+    post_process_visualization = getattr(visual, 'visual_results')
 
     return (acc_score, set_seed, init_criterion, init_optimizer, DataProcessor, data_origanization_params, Data_params,
             hyperparameters_chosen_extraction, post_process_visualization)

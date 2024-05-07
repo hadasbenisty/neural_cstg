@@ -10,6 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from c_stg.utils import import_per_data_type
 from c_stg.data_processing import DataContainer
 
+
 def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
     # Specific imports
     (acc_score, set_seed, init_criterion, init_optimizer, DataProcessor, data_origanization_params, Data_params,
@@ -30,11 +31,9 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
     # cross validation k fold split is done in DataProcessor
     data = DataProcessor(params)
     params = data.params
-    if not data.use_flag:  # the data not suitable
-        return
 
     # input_dim = no. of explanatory features
-    params.input_dim = data.explan_feat.shape[-1]
+    params.input_dim = data.explain_feat.shape[-1]
     # input_dim = no. of contextual features
     params.param_dim = 1
     #
@@ -67,9 +66,9 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
 
                 # Predict the model on the test set
                 y_tr_pred = lasso_model.predict(xtr)
-                train_acc.append(acc_score(ytr, y_tr_pred))
+                train_acc.append(acc_score(ytr, y_tr_pred,params))
                 y_dev_pred = lasso_model.predict(xdev)
-                dev_acc.append(acc_score(ydev, y_dev_pred))
+                dev_acc.append(acc_score(ydev, y_dev_pred,params))
                 print(f"train accuracy is:{str(train_acc[-1])}, and dev accuracy is:{str(dev_acc[-1])}")
 
             filename = params.res_directory + "LogisticRegression_c_value" + str(c_value) + ".mat"
@@ -115,13 +114,13 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
 
                             num_iter += 1
                             if num_iter == 20:
-                                uneffective_flag=False
+                                uneffective_flag = False
 
                         print("-----------------dev acc fold" + str(fold) + " is:" + str(dev_acc_array[-1]))
                         acc_dev_folds.append(dev_acc_array[-1])
 
                         unique_r = np.unique(Container.rte)  # returns a sorted array
-                        #alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
+                        # alpha_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
                         mu_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
                         if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
                             w_vals = np.zeros((Container.xtr.shape[1], len(unique_r)))
@@ -132,12 +131,11 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                         targets_per_r = [None] * len(unique_r)
                         pred_labels_per_r = [None] * len(unique_r)
 
-
                         ri = 0
                         for rval in np.unique(Container.rte):
-                            #alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
+                            # alpha_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
                             if params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid_extension":
-                                mu_vals[:, ri], w_vals[:, ri] =\
+                                mu_vals[:, ri], w_vals[:, ri] = \
                                     get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
                             elif params.ML_model_name == "fc_stg_layered_param_modular_model_sigmoid":
                                 mu_vals[:, ri] = get_prob_alpha(params, model, np.array(rval).reshape(-1, 1))
@@ -155,7 +153,7 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                                                                               batch_size=params.batch_size,
                                                                               shuffle=False)
 
-                            acc_dev, _, all_targets, labels_pred =\
+                            acc_dev, _, all_targets, labels_pred = \
                                 test_process(params, model, test_dataloader_tmp, criterion,
                                              stg_regularizer, acc_score)
                             targets_per_r[ri] = all_targets
@@ -189,8 +187,5 @@ def main_workflow(data_type='flavors', cstg_args={}, data_args={}):
                         fe.write(msg2)
 
     # print("----Start post-processing---")
-    #post_process_visualization(params.res_directory)
+    # post_process_visualization(params.res_directory)
     print("----FINISH----")
-
-
-

@@ -6,7 +6,6 @@ import torch.nn as nn
 
 # Training
 def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer, stg_regularizer, acc_score):
-
     acc_train_array = [0]
     loss_train_array = [0]
     acc_dev_array = [0]
@@ -26,15 +25,16 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
                 target = target.to(params.device).long()
             else:
                 target = target.to(params.device).float()
+                # todo: the contesxt id the b
             B = B.to(params.device).float()
 
             output = model(input, B)
             output = torch.squeeze(output, axis=1)
             loss = criterion(output, torch.squeeze(target, axis=1))
-	#loss.float()
+            # loss.float()
 
             if params.stg:
-                stg_loss = torch.mean(model.reg(model.gates.mu/model.sigma))
+                stg_loss = torch.mean(model.reg(model.gates.mu / model.sigma))
                 loss += stg_regularizer * stg_loss
 
             optimizer.zero_grad()
@@ -45,8 +45,9 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
 
         model.eval()
 
-        acc_train, loss_train, _, _ = test_process(params, model, train_dataloader, criterion, stg_regularizer, acc_score)
-        if acc_train == acc_train_array[-1]/100:
+        acc_train, loss_train, _, _ = test_process(params, model, train_dataloader, criterion, stg_regularizer,
+                                                   acc_score)
+        if acc_train == acc_train_array[-1] / 100:
             same_acc_count += 1
             if same_acc_count == 40:
                 uneffective_learn = True
@@ -76,7 +77,6 @@ def train(params, model, train_dataloader, dev_dataloader, criterion, optimizer,
 
 
 def test_process(params, model, test_dataloader, criterion, stg_regularizer, acc_score):
-
     y_pred = None
     all_targets = None
     train_loss = 0
@@ -119,7 +119,7 @@ def test_process(params, model, test_dataloader, criterion, stg_regularizer, acc
 
             target = target.to(params.device).float()
         loss = criterion(output, torch.squeeze(target, axis=1))
-        loss += stg_regularizer * torch.mean(model.reg(model.gates.mu/model.sigma))
+        loss += stg_regularizer * torch.mean(model.reg(model.gates.mu / model.sigma))
         train_loss += loss.item() * len(input)
         train_count += len(input)
 

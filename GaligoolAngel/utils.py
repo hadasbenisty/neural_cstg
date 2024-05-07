@@ -17,7 +17,7 @@ def acc_score(targets, prediction, params):
         total_predictions = targets.size(0)
         acc = correct_predictions / total_predictions
     else:
-        acc = mean_squared_error(targets, prediction.reshape(targets.shape)) / 1 # Todo fix np.var(targets)
+        acc = mean_squared_error(targets, prediction.reshape(targets.shape)) / 1  # Todo fix np.var(targets)
     return acc
 
 
@@ -101,7 +101,8 @@ def find_best_hyper_comb(root_directory, key):
 
     return best_folder
 
-#optional if we ever want to check the best hyper comb for seperation and not accuracy
+
+# optional if we ever want to check the best hyper comb for seperation and not accuracy
 def find_best_hyper_comb_seperation(root_directory, key):
     # Initialize variables to store the maximum mean and corresponding folder
     min_mean = float('inf')  # Negative infinity to ensure any mean value will be greater
@@ -148,10 +149,13 @@ def find_best_hyper_comb_seperation(root_directory, key):
 
     return best_folder
 
+
 def seperation_score(mu_vals):
+    score = None
     for mu in mu_vals:
-        score += min(1-mu,mu)^2
+        score += min(1 - mu, mu) ^ 2
     return score
+
 
 def set_seed(seed):
     """Set the random seed for reproducibility."""
@@ -161,20 +165,21 @@ def set_seed(seed):
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
+
 def vector_to_symmetric_matrix(vector):
     # Calculate the minimum size of the matrix n using the inverse of the formula for the elements in the upper triangle
-    n = int(np.ceil((np.sqrt(1 + 8*len(vector))) / 2))
-    
+    n = int(np.ceil((np.sqrt(1 + 8 * len(vector))) / 2))
+
     # Calculate the required size of the input vector for a symmetric matrix of size n
     required_vector_size = n * (n + 1) // 2
-    
+
     # Check if the input vector is too short, if so, pad it with zeros
     if len(vector) < required_vector_size:
         vector = np.pad(vector, (0, required_vector_size - len(vector)), 'constant')
-    
+
     # Initialize an n x n matrix filled with zeros
     matrix = np.zeros((n, n))
-    
+
     # Fill in the upper triangle and mirror it to the lower triangle
     index = 0
     for i in range(n):
@@ -182,8 +187,9 @@ def vector_to_symmetric_matrix(vector):
             matrix[i, j] = vector[index]
             matrix[j, i] = vector[index]
             index += 1
-            
+
     return matrix
+
 
 def vector_to_matrix_index(i):
     """
@@ -197,9 +203,9 @@ def vector_to_matrix_index(i):
     - (row, col): A tuple of row and column indices in the matrix.
     """
     # Identify the row by solving the quadratic equation or iterative searching
-    r = int(np.floor((np.sqrt(1 + 8*i)) / 2))
-    
+    r = int(np.floor((np.sqrt(1 + 8 * i)) / 2))
+
     # Calculate the column index based on the row
     c = i - r * (r + 1) // 2 + r
-    
+
     return (r, c)

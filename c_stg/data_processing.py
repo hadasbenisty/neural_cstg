@@ -7,18 +7,18 @@ class DataContainer:
     def __init__(self, params, data, fold):
 
         # train set
-        self.xtr = data.explan_feat[data.traininds[fold], :]
+        self.xtr = data.explain_feat[data.traininds[fold], :]
         self.ytr = data.output_label[data.traininds[fold]]
         self.rtr = data.context_feat[data.traininds[fold]]
         self.rtr = 2 * (norm_minmax(self.rtr.reshape(-1, 1)) - 0.5)
         # test set
-        self.xte = data.explan_feat[data.testinds[fold], :]
+        self.xte = data.explain_feat[data.testinds[fold], :]
         self.yte = data.output_label[data.testinds[fold]]
         self.rte = data.context_feat[data.testinds[fold]]
         self.rte = 2 * (norm_minmax(self.rte.reshape(-1, 1)) - 0.5)
         # develop set
         if not params.post_process_mode:  # finding hyperparameters
-            self.xdev = data.explan_feat[data.devinds[fold], :]
+            self.xdev = data.explain_feat[data.devinds[fold], :]
             self.ydev = data.output_label[data.devinds[fold]]
             self.rdev = data.context_feat[data.devinds[fold]]
             self.rdev = 2 * (norm_minmax(self.rdev.reshape(-1, 1)) - 0.5)
