@@ -19,7 +19,7 @@ class ResultProcessor:
         self.important_neurons = []
         self.not_important_neurons = []
         self.find_important_features()
-        self.find_important_neurons()\
+        self.find_important_neurons()
 
     
     def find_important_features(self):
@@ -32,11 +32,11 @@ class ResultProcessor:
         - Non Important Features - Features who's weights are on average small - 
         meaning they do not contribute to the process of the diffusion map
         """
-        feature_var = np.var(self.feature_weights, axis = 1)
-        self.dynamic_features = np.array(np.where(feature_var > 0.025)) # Just a value that is bigger than 0
+        feature_var = np.var(self.feature_weights, axis=1)
+        self.dynamic_features = np.array(np.where(feature_var > 0.01)) # Just a value that is bigger than 0
         feature_mean = np.mean(self.feature_weights, axis=1)
-        self.important_features = np.array(np.where(feature_mean > 0.025))
-        self.not_important_features = np.array(np.where(feature_mean <= 0.025))
+        self.important_features = np.array(np.where(feature_mean > 0.01))
+        self.not_important_features = np.array(np.where(feature_mean <= 0.01))
 
     def find_important_neurons(self):
         """

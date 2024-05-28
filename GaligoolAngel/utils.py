@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 import scipy.io as spio
 import random
-
+import torch
 
 def acc_score(targets, prediction, params):
     if params.classification_flag == 'True' and params.output_dim == 1:
@@ -49,7 +49,7 @@ def hyperparameters_chosen_extraction(params):
     learning_rate = float(best_acc_dev_folder[learning_rate_idx:].split('_')[0])
     stg_regularizer = params.stg_regularizers[0]  # lambda, only one option
     hyperparameter_combination = params.strfile + "_hidden" + str(hyper_hidden_dim) + "_lr" + \
-                                 str(learning_rate) + "_lam" + str(stg_regularizer)
+                                 str(learning_rate) + "_lam" + str(stg_regularizer) + "_lay" + str(hidden_dim)
     filename = os.path.join(params.infer_directory, hyperparameter_combination + "_Final_check" + ".mat")
 
     return filename, hidden_dim, hyper_hidden_dim, learning_rate, stg_regularizer, hyperparameter_combination
@@ -179,7 +179,7 @@ def vector_to_symmetric_matrix(vector):
     else:
         shape_mat = (n,n,1)
         num_vecs = 1
-        vector.reshape((vector.size, 1))
+        vector = vector[:, np.newaxis]
     matrix = np.zeros(shape_mat)
     
     # Fill in the upper triangle and mirror it to the lower triangle
@@ -212,3 +212,13 @@ def vector_to_matrix_index(i):
     c = c.flatten()
     
     return np.column_stack((r, c))
+
+def calculate_correlations_columns(tensor1, tensor2): #TODO: Look how to properly standarized the tensors.
+    tensor1 = torch.tensor(tensor1)
+    tensor2 = torch.tensor(tensor2)
+    tensor1_standardized = (tensor1 - tensor1.mean(axis=0)) / tensor1.std(axis=0)
+    tensor2_standardized = (tensor2 - tensor2.mean(axis=0)) / tensor2.std(axis=0)
+    
+    correlations = torch.mm(tensor1_standardized.permute(), tensor2_standardized) / (tensor1.size(0) - 1)
+    
+    return correlations

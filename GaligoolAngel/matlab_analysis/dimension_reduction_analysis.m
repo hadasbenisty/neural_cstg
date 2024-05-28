@@ -8,7 +8,7 @@ labelsCNO = {'train_1' 'CNO_2' 'CNO_3' 'CNO_4' ...
 animalsnames = {'DT141' 'DT155'};
 animalsLabels = [0 1];
 
-chosen_animal = 1; % or 1
+chosen_animal = 2; % or 1
 disp("loading data")
 datapath = '../data/';
 load(fullfile(datapath, animalsnames{chosen_animal}, 'data.mat'));
@@ -30,41 +30,41 @@ for session = 1:length(training_lut)
         length(sflabels(train_stage == session));
 end
 
-%% PLotting the CC
-% Define the figure
-h = figure;
-
-% Define parameters for the sine wave and the GIF
-filename = fullfile(results_path, num2str(chosen_animal), 'correlations.gif'); % Name of the GIF file
-nFrames = 24; % Number of frames in the GIF
-jump = floor(size(CC, 3) ./ nFrames);
-
-% Loop over frames
-for n = 1:jump:size(CC,3)
-    
-    
-    % Plot the sine wave
-    imagesc(CC(:, :, n))
-    colormap('jet');
-    
-    % Capture the plot as an image
-    frame = getframe(h);
-    im = frame2im(frame);
-    [imind, cm] = rgb2ind(im, 256);
-    
-    % Write to the GIF File
-    if n == 1
-        imwrite(imind, cm, filename, 'gif', 'Loopcount', inf);
-    else
-        imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append');
-    end
-    
-    % Pause briefly to simulate animation speed
-    pause(0.1);
-end
-
-% Close the figure
-close(h);
+% %% PLotting the CC
+% % Define the figure
+% h = figure;
+% 
+% % Define parameters for the sine wave and the GIF
+% filename = fullfile(results_path, num2str(chosen_animal), 'correlations.gif'); % Name of the GIF file
+% nFrames = 24; % Number of frames in the GIF
+% jump = floor(size(CC, 3) ./ nFrames);
+% 
+% % Loop over frames
+% for n = 1:jump:size(CC,3)
+% 
+% 
+%     % Plot the sine wave
+%     imagesc(CC(:, :, n))
+%     colormap('jet');
+% 
+%     % Capture the plot as an image
+%     frame = getframe(h);
+%     im = frame2im(frame);
+%     [imind, cm] = rgb2ind(im, 256);
+% 
+%     % Write to the GIF File
+%     if n == 1
+%         imwrite(imind, cm, filename, 'gif', 'Loopcount', inf);
+%     else
+%         imwrite(imind, cm, filename, 'gif', 'WriteMode', 'append');
+%     end
+% 
+%     % Pause briefly to simulate animation speed
+%     pause(0.1);
+% end
+% 
+% % Close the figure
+% close(h);
 %% CC Analysis
 CC_features = getLowerHalf(CC);
 
@@ -229,7 +229,7 @@ for train_stage_num = min(train_stage):max(train_stage)
 end
 % Create a figure and save its handle
 fig_svm_sf_each = figure;
-y1 = "Model's Accuracy - average success rate";
+yl = "Model's Accuracy - average success rate";
 xl = 'Train Stage';
 plot(model_accuracy_sf_each - avg_suc_rate, 'DisplayName', 'CC Matrix');
 hold on;
@@ -240,8 +240,8 @@ plot(model_accuracy_diff_map_sf_each - avg_suc_rate, 'DisplayName', ...
     'Diffusion Map 3D');
 legend;
 title('The SVM prediction success rate trained on each session');
-xlabel(x1);
-ylabel(y1);
+xlabel(xl);
+ylabel(yl);
 
 
 
@@ -406,12 +406,13 @@ saveas(tsne_algo_fig,  fullfile(results_path, animal_num_str, ...
     'tsne_3d_CC'), 'jpg');
 
 %% Save dateset for python
-smoothed_to_python = save_data_for_cstg(CC_features,train_stage,diffusion_map(:, 2),51,'dataset_diff_animal2.mat');
+best_ind = 5;
+smoothed_to_python = save_data_for_cstg(CC_features,train_stage,diffusion_map(:, 5),51,['dataset_diff_animal', num2str(chosen_animal), '_comp', num2str(best_ind), '.mat']);
 %% Saving Results
-save(fullfile(inputs_path, "diffusion_map_analysis.mat"), ...
+save(fullfile(inputs_path, join(["diffusion_map_analysis_", num2str(chosen_animal), ".mat"], '')), ...
     'diffusion_map', 'avg_suc_rate', 'sflabels', 'train_stage');
 save(fullfile(inputs_path, "diffusion_dimension_analysis.mat"), ...
     'diffusion_map', 'sflabels', 'train_stage', 'pca_cc_features', ...
     'CC_features_squeezed');
-save(fullfile(inputs_path, "graph_analysis_inputs.mat"), ...
+save(fullfile(inputs_path, join(["graph_analysis_inputs", num2str(chosen_animal), ".mat"], '')), ...
     "CC", "train_stage", "CC_features", "data_all", "training_lut")
